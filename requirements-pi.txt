@@ -1,0 +1,3 @@
+# Raspberry Pi 5 runtime. NO torch, NO sentence-transformers.
+-r requirements-common.txt
+# Optional fallback: whisper.cpp built from source (see T4.2).

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Recordings and personal data: NEVER commit (plan rule)
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Model weights (downloaded/exported)
+models/**
+!models/.gitkeep
+
+# Generated question audio / subtitle / lip-sync cache
+cache/**
+!cache/.gitkeep
+
+# Benchmark outputs (keep folder only)
+eval/results/**
+!eval/results/.gitkeep

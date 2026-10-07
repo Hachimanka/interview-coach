@@ -1,0 +1,17 @@
+# Runtime packages shared by PC and Raspberry Pi 5. No torch here.
+# Pin versions after the first successful install (pip freeze), see T0.1.
+numpy
+pyyaml
+sounddevice        # mic capture
+soundfile          # WAV I/O
+onnxruntime        # Silero VAD, embedder (Pi)
+faster-whisper     # CTranslate2 ASR, has ARM64 wheels
+opencv-python      # camera frames
+mediapipe          # face + landmarks
+piper-tts          # English TTS
+tokenizers         # embedder tokenizer without torch
+scikit-learn       # ordinal / small classifiers
+joblib
+pyserial           # ESP32 link
+websockets         # app -> face UI page
+scipy              # resampling (also a scikit-learn dependency)

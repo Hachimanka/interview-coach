@@ -1,0 +1,76 @@
+{
+  "bank": "CpE",
+  "programs": ["CpE"],
+  "status": "UNAPPROVED SAMPLE for development only. Replace with faculty-approved items in data/rubric (T0.3).",
+  "scale": [1, 2, 3, 4, 5],
+  "questions": [
+    {
+      "id": "cpe.project",
+      "text": {
+        "en": "Describe a hardware or software project you built. What problem did it solve and what was your role?",
+        "fil": "Ilarawan ang isang hardware o software project na ginawa mo. Anong problema ang nilutas nito at ano ang naging papel mo?"
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "technical_depth",
+          "name": "Technical depth",
+          "description": "Explains the technology used and why, with correct terms.",
+          "key_points": ["names the hardware or software components", "explains why those components were chosen", "mentions a technical challenge"],
+          "anchors": {
+            "5": ["We built a smart water meter. I programmed an ESP32 to read a flow sensor through interrupts, sent data over MQTT to a Raspberry Pi, and stored it in SQLite. The hard part was sensor noise, which I fixed with a moving average filter."],
+            "3": ["We made a water monitoring system with Arduino and sensors that sends data to a website."],
+            "1": ["We made a system for water. It works with a microcontroller."]
+          },
+          "correction": "Name the main components you used, why you chose them, and one technical problem you solved."
+        },
+        {
+          "id": "role",
+          "name": "Own role and result",
+          "description": "Clearly states their personal role and the outcome.",
+          "key_points": ["states their specific role", "states the result or impact"],
+          "anchors": {
+            "5": ["I was responsible for the firmware and the data pipeline. The final system measured flow within five percent of the reference meter and was used in our dormitory for a month."],
+            "3": ["I did the programming part and the project passed."],
+            "1": ["We all worked on it together."]
+          },
+          "correction": "Say exactly which part you built and what the project achieved, ideally with a number."
+        }
+      ]
+    },
+    {
+      "id": "cpe.debugging",
+      "text": {
+        "en": "How do you approach debugging a program or circuit that is not working?",
+        "fil": "Paano mo hinaharap ang pag-debug ng isang program o circuit na hindi gumagana?"
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "method",
+          "name": "Systematic method",
+          "description": "Describes a step-by-step process: reproduce, isolate, test, fix, verify.",
+          "key_points": ["reproduces the problem", "isolates the cause step by step", "verifies the fix"],
+          "anchors": {
+            "5": ["First I reproduce the bug reliably. Then I isolate it by testing one module at a time, using serial prints or a logic analyzer. After fixing it, I retest the whole system to make sure nothing else broke."],
+            "3": ["I check the code for errors and try to change things until it works."],
+            "1": ["I ask my classmates or search online for the answer."]
+          },
+          "correction": "Describe your steps in order: reproduce the problem, narrow down the cause, fix it, then test again."
+        },
+        {
+          "id": "tools",
+          "name": "Tools and example",
+          "description": "Names real debugging tools and gives a concrete example.",
+          "key_points": ["names a debugging tool", "gives a concrete example"],
+          "anchors": {
+            "5": ["For example, our I2C display froze randomly. With an oscilloscope I saw the pull-up resistors were too weak, so I replaced them with 4.7 kilo-ohm resistors and it worked."],
+            "3": ["I use the serial monitor and a multimeter."],
+            "1": ["I just look at it carefully."]
+          },
+          "correction": "Mention the tools you use and give one real example of a bug you found."
+        }
+      ]
+    }
+  ]
+}

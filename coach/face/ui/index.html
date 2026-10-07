@@ -1,0 +1,235 @@
+<!doctype html>
+<!-- Interviewer face + subtitles for the head display (T1.9 / T1.10).
+     Fed by coach/face/server.py over WebSocket. Runs in Chromium kiosk mode on the Pi (T4.6).
+     PC shortcuts: Enter = Done, Esc = Stop. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interviewer</title>
+<style>
+  :root {
+    --bg: #10131a; --ink: #e8ecf4; --pupil: #10131a; --accent: #7aa2ff;
+    --muted: #8a93a6; --bar: rgba(0, 0, 0, .55); --cheek: rgba(255, 140, 150, .22);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden;
+    user-select: none; cursor: default; }
+  #app { position: relative; height: 100%; display: flex; flex-direction: column; }
+
+  /* HUD */
+  #hud { display: flex; justify-content: space-between; align-items: center;
+    padding: 1.6vh 2.2vw; font-size: clamp(14px, 2.4vw, 26px); color: var(--muted); min-height: 7vh; }
+  #stop { background: transparent; color: var(--muted); border: 1px solid #3a4152; border-radius: 999px;
+    padding: .3em 1em; font: inherit; font-size: .85em; }
+  #hud .right { display: flex; gap: 1.4em; font-variant-numeric: tabular-nums; }
+
+  /* Face */
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  svg { width: min(78vw, 120vh); height: auto; max-height: 100%; overflow: visible; }
+  #head { transform-origin: 200px 150px; transition: transform .6s ease; }
+  .tilt #head { transform: rotate(-3deg); }
+  .nod #head { animation: nod .9s ease-in-out; }
+  @keyframes nod { 0%,100% { translate: 0 0; } 40% { translate: 0 9px; } 70% { translate: 0 -2px; } }
+  .eye { transform-box: fill-box; transform-origin: center; transition: transform .08s; }
+  .blink .eye { transform: scaleY(.08); }
+  .pupil { transition: transform .25s ease-out; }
+  .brow { transition: d .35s ease; }
+  #mouth { transition: d .07s linear; }
+  .cheek { fill: var(--cheek); opacity: 0; transition: opacity .5s; }
+  .s-greeting .cheek, .s-closing .cheek { opacity: 1; }
+  #dots circle { opacity: 0; fill: var(--ink); }
+  .s-thinking #dots circle { animation: dot 1.2s infinite; }
+  .s-thinking #dots circle:nth-child(2) { animation-delay: .2s; }
+  .s-thinking #dots circle:nth-child(3) { animation-delay: .4s; }
+  @keyframes dot { 0%,100% { opacity: .15; } 50% { opacity: 1; } }
+
+  /* Subtitles */
+  #subs { min-height: 15vh; display: flex; align-items: center; justify-content: center; padding: 1.2vh 3vw 2.4vh; }
+  #subs span { background: var(--bar); border-radius: 10px; padding: .35em .8em; text-align: center;
+    font-size: clamp(18px, 4.2vw, 44px); line-height: 1.3; white-space: pre-line; max-width: 94vw; }
+  #subs span:empty { display: none; }
+  #subs.persist span { font-size: clamp(15px, 3vw, 30px); color: #cfd6e4; }
+
+  /* Panels (touch) */
+  #panel { display: none; flex-direction: column; align-items: center; gap: 1.4vh; padding-top: 1vh; }
+  #panel.show { display: flex; }
+  #panel .title { font-size: clamp(16px, 3vw, 30px); background: var(--bar); padding: .3em .9em; border-radius: 10px; }
+  #panel .row { display: flex; gap: 2vw; flex-wrap: wrap; justify-content: center; }
+  #panel button, #done { font: inherit; font-size: clamp(18px, 3.4vw, 36px); padding: .45em 1.4em;
+    border-radius: 14px; border: 0; background: var(--accent); color: #0b1020; font-weight: 600; }
+  #panel button.secondary { background: #2a3142; color: var(--ink); }
+  #done { position: absolute; right: 2.5vw; bottom: 17vh; display: none; }
+  #done.show { display: block; }
+  #offline { position: absolute; left: 50%; top: 1.5vh; translate: -50% 0; color: #ff9a8a;
+    font-size: 14px; display: none; }
+  #offline.show { display: block; }
+</style>
+</head>
+<body>
+<div id="app" class="s-idle">
+  <div id="hud">
+    <button id="stop" aria-label="Stop session">Stop</button>
+    <div class="right"><span id="q"></span><span id="timer"></span></div>
+  </div>
+
+  <div id="stage">
+    <svg viewBox="0 0 400 290" aria-label="Interviewer face">
+      <g id="head">
+        <ellipse class="cheek" cx="98" cy="185" rx="26" ry="14"/>
+        <ellipse class="cheek" cx="302" cy="185" rx="26" ry="14"/>
+        <g class="eye" id="eyeL">
+          <ellipse cx="130" cy="120" rx="36" ry="44" fill="var(--ink)"/>
+          <g class="pupil"><circle cx="130" cy="124" r="17" fill="var(--pupil)"/><circle cx="137" cy="116" r="5" fill="var(--ink)"/></g>
+        </g>
+        <g class="eye" id="eyeR">
+          <ellipse cx="270" cy="120" rx="36" ry="44" fill="var(--ink)"/>
+          <g class="pupil"><circle cx="270" cy="124" r="17" fill="var(--pupil)"/><circle cx="277" cy="116" r="5" fill="var(--ink)"/></g>
+        </g>
+        <path class="brow" id="browL" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>
+        <path class="brow" id="browR" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round"/>
+        <path id="mouth" fill="none" stroke="var(--ink)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <g id="dots"><circle cx="330" cy="40" r="7"/><circle cx="352" cy="28" r="7"/><circle cx="374" cy="16" r="7"/></g>
+      </g>
+    </svg>
+  </div>
+
+  <div id="panel"><div class="title" id="ptitle"></div><div class="row" id="prow"></div></div>
+  <div id="subs"><span id="subtext"></span></div>
+  <button id="done">Done</button>
+  <div id="offline">Connecting…</div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const app = $("app");
+
+  // ---------- expressions: brows + resting mouth (all neutral-to-positive) ----------
+  const BROW = {
+    neutral: ["M96 64 Q130 54 164 62", "M236 62 Q270 54 304 64"],
+    raised:  ["M96 56 Q130 42 164 54", "M236 54 Q270 42 304 56"],
+    soft:    ["M98 62 Q130 50 162 58", "M238 58 Q270 50 302 62"],
+    think:   ["M96 60 Q130 48 164 60", "M236 52 Q270 40 304 50"],
+  };
+  const MOUTH = {
+    neutral: "M165 212 Q200 222 235 212",
+    smile:   "M152 205 Q200 245 248 205",
+    warm:    "M158 208 Q200 236 242 208",
+    flat:    "M178 216 Q200 218 222 214",
+  };
+  const STATE = {
+    idle:      { brow: "neutral", mouth: "neutral" },
+    greeting:  { brow: "raised",  mouth: "smile" },
+    talking:   { brow: "soft",    mouth: null },
+    listening: { brow: "soft",    mouth: "warm", tilt: true },
+    waiting:   { brow: "raised",  mouth: "warm" },
+    thinking:  { brow: "think",   mouth: "flat" },
+    closing:   { brow: "raised",  mouth: "smile" },
+  };
+  let state = "idle", gaze = { x: 0, y: 0 }, present = false;
+
+  function setState(s) {
+    state = STATE[s] ? s : "idle";
+    const e = STATE[state];
+    app.className = "s-" + state + (e.tilt ? " tilt" : "");
+    $("browL").setAttribute("d", BROW[e.brow][0]);
+    $("browR").setAttribute("d", BROW[e.brow][1]);
+    if (e.mouth) setMouthPath(MOUTH[e.mouth], false);
+    else setMouth(0);
+    applyGaze();
+  }
+
+  // ---------- lip-sync: level 0..3 -> open mouth ----------
+  const OPEN = [4, 20, 36, 52];       // lower-lip depth per level
+  const WIDE = [30, 34, 37, 40];      // half-width per level
+  function setMouth(level) {
+    const i = Math.max(0, Math.min(3, level | 0)), h = OPEN[i], w = WIDE[i];
+    setMouthPath(`M${200 - w} 208 Q200 ${200 - h * 0.12} ${200 + w} 208 Q200 ${208 + h} ${200 - w} 208 Z`, true);
+  }
+  function setMouthPath(d, filled) {
+    const m = $("mouth");
+    m.setAttribute("d", d);
+    m.setAttribute("fill", filled ? "#2a1820" : "none");
+  }
+
+  // ---------- eyes: gaze, idle drift, blink ----------
+  function applyGaze() {
+    let x = gaze.x, y = gaze.y;
+    if (state === "thinking") { x = 0.55; y = -0.8; }
+    else if (state === "idle" || !present) { x = drift.x; y = drift.y; }
+    const t = `translate(${(x * 13).toFixed(1)}px, ${(y * 11).toFixed(1)}px)`;
+    document.querySelectorAll(".pupil").forEach(p => p.style.transform = t);
+  }
+  const drift = { x: 0, y: 0 };
+  setInterval(() => { drift.x = Math.random() * 1.4 - 0.7; drift.y = Math.random() * 0.8 - 0.4; applyGaze(); }, 2600);
+  (function blink() {
+    setTimeout(() => { app.classList.add("blink"); setTimeout(() => { app.classList.remove("blink"); blink(); }, 130); },
+               2500 + Math.random() * 3500);
+  })();
+
+  function nod() {
+    app.classList.remove("nod"); void app.offsetWidth; app.classList.add("nod");
+    setTimeout(() => app.classList.remove("nod"), 950);
+  }
+
+  // ---------- panels ----------
+  let ws = null;
+  const send = (name, value) => ws && ws.readyState === 1 && ws.send(JSON.stringify({ type: "event", name, value }));
+  function panel(kind, options, title) {
+    const p = $("panel"), row = $("prow");
+    row.innerHTML = ""; $("ptitle").textContent = title || "";
+    $("done").classList.toggle("show", kind === "answer");
+    if (kind === "consent" || kind === "program" || kind === "choice") {
+      (options.length ? options : ["Yes", "No"]).forEach((o, i) => {
+        const b = document.createElement("button");
+        b.textContent = o;
+        if (kind === "consent" && i === 1) b.className = "secondary";
+        b.onclick = () => send(kind, o);
+        row.appendChild(b);
+      });
+      p.classList.add("show");
+    } else p.classList.remove("show");
+  }
+  $("done").onclick = () => send("done");
+  $("stop").onclick = () => send("stop");
+  addEventListener("keydown", e => { if (e.key === "Enter") send("done"); if (e.key === "Escape") send("stop"); });
+
+  // ---------- messages ----------
+  function handle(m) {
+    switch (m.type) {
+      case "state": setState(m.state); break;
+      case "mouth": if (state === "talking") setMouth(m.level); break;
+      case "subtitle": $("subtext").textContent = m.text || ""; $("subs").classList.toggle("persist", !!m.persist); break;
+      case "gaze": gaze = { x: m.x, y: m.y }; present = !!m.present; applyGaze(); break;
+      case "hud": $("timer").textContent = m.timer || ""; $("q").textContent = m.q || ""; break;
+      case "panel": panel(m.kind, m.options || [], m.title); break;
+      case "nod": nod(); break;
+    }
+  }
+  const port = new URLSearchParams(location.search).get("ws") || "8765";
+  function connect() {
+    ws = new WebSocket(`ws://${location.hostname || "127.0.0.1"}:${port}`);
+    ws.onopen = () => $("offline").classList.remove("show");
+    ws.onmessage = e => { try { handle(JSON.parse(e.data)); } catch (_) {} };
+    ws.onclose = () => { $("offline").classList.add("show"); setTimeout(connect, 1000); };
+  }
+  setState("idle");
+  // Preview without the server, e.g. index.html?state=talking&mouth=2&sub=Hello&panel=consent
+  const qp = new URLSearchParams(location.search);
+  if (qp.get("state")) {
+    handle({ type: "state", state: qp.get("state") });
+    if (qp.get("mouth")) handle({ type: "mouth", level: +qp.get("mouth") });
+    if (qp.get("sub")) handle({ type: "subtitle", text: qp.get("sub"), persist: qp.get("persist") === "1" });
+    if (qp.get("panel")) handle({ type: "panel", kind: qp.get("panel"),
+      options: qp.get("panel") === "program" ? ["CpE", "EE", "ECE"] : [], title: qp.get("title") || "" });
+    handle({ type: "hud", timer: "01:12", q: "Q3 / 5" });
+    return;
+  }
+  connect();
+  window.__face = { setState, setMouth, handle };   // for screenshots/tests
+})();
+</script>
+</body>
+</html>

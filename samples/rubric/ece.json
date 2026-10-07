@@ -1,0 +1,76 @@
+{
+  "bank": "ECE",
+  "programs": ["ECE"],
+  "status": "UNAPPROVED SAMPLE for development only. Replace with faculty-approved items in data/rubric (T0.3).",
+  "scale": [1, 2, 3, 4, 5],
+  "questions": [
+    {
+      "id": "ece.signal",
+      "text": {
+        "en": "Explain how you would reduce noise in a sensor signal before it reaches a microcontroller.",
+        "fil": "Ipaliwanag kung paano mo babawasan ang noise sa signal ng isang sensor bago ito umabot sa microcontroller."
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "techniques",
+          "name": "Valid techniques",
+          "description": "Names correct hardware and software noise-reduction techniques.",
+          "key_points": ["uses a low-pass or RC filter", "uses shielding, grounding or short wiring", "applies software filtering or averaging"],
+          "anchors": {
+            "5": ["I would add an RC low-pass filter before the ADC, use shielded twisted-pair cable with a single ground point, and apply a moving average or median filter in firmware."],
+            "3": ["I would use a filter and maybe average the readings."],
+            "1": ["I would use a better sensor."]
+          },
+          "correction": "Mention at least one hardware method, such as an RC filter or shielding, and one software method, such as averaging."
+        },
+        {
+          "id": "reasoning",
+          "name": "Explains why",
+          "description": "Explains why the technique works or how to choose its values.",
+          "key_points": ["explains choosing the cutoff frequency", "relates to the sampling rate or signal bandwidth"],
+          "anchors": {
+            "5": ["I would choose the cutoff above the sensor's useful bandwidth but well below half the sampling rate, so I keep the signal while avoiding aliasing."],
+            "3": ["The filter removes the high-frequency part of the signal."],
+            "1": ["It makes it cleaner."]
+          },
+          "correction": "Explain why your method works, for example how you choose the filter's cutoff frequency."
+        }
+      ]
+    },
+    {
+      "id": "ece.pcb",
+      "text": {
+        "en": "What do you consider when designing a printed circuit board?",
+        "fil": "Ano ang mga isinasaalang-alang mo kapag nagdidisenyo ng printed circuit board?"
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "design_rules",
+          "name": "Design considerations",
+          "description": "Covers trace width, grounding, component placement and manufacturability.",
+          "key_points": ["sizes traces for current", "uses a solid ground plane", "places decoupling capacitors near ICs", "follows manufacturer design rules"],
+          "anchors": {
+            "5": ["I size traces for the current they carry, use a solid ground plane, place decoupling capacitors close to each IC's power pins, keep high-speed traces short, and run the manufacturer's design rule check."],
+            "3": ["I make sure the traces are connected properly and the board is not too big."],
+            "1": ["I follow the schematic."]
+          },
+          "correction": "Mention specific rules: trace width for current, a ground plane, decoupling capacitors, and the design rule check."
+        },
+        {
+          "id": "experience",
+          "name": "Hands-on experience",
+          "description": "References a board they designed and the tool used.",
+          "key_points": ["names a PCB tool such as KiCad or Altium", "describes a board they made"],
+          "anchors": {
+            "5": ["In KiCad I designed a two-layer board for a power supply project, had it fabricated, and fixed a footprint error in the second revision."],
+            "3": ["I have used KiCad in our laboratory class."],
+            "1": ["I have not really made one."]
+          },
+          "correction": "Mention the tool you used and a board you actually designed, including what you learned from it."
+        }
+      ]
+    }
+  ]
+}

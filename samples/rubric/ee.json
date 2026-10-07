@@ -1,0 +1,76 @@
+{
+  "bank": "EE",
+  "programs": ["EE"],
+  "status": "UNAPPROVED SAMPLE for development only. Replace with faculty-approved items in data/rubric (T0.3).",
+  "scale": [1, 2, 3, 4, 5],
+  "questions": [
+    {
+      "id": "ee.safety",
+      "text": {
+        "en": "What safety practices do you follow when working with electrical installations?",
+        "fil": "Anong mga safety practice ang sinusunod mo kapag nagtatrabaho sa mga electrical installation?"
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "practices",
+          "name": "Correct safety practices",
+          "description": "Names specific, correct practices such as lockout-tagout, PPE and verifying de-energization.",
+          "key_points": ["de-energizes and applies lockout-tagout", "verifies absence of voltage with a tester", "uses proper personal protective equipment"],
+          "anchors": {
+            "5": ["Before working I switch off the breaker, apply lockout-tagout, and verify zero voltage with a tested voltage detector. I wear insulated gloves and safety shoes, and I never work alone on live panels."],
+            "3": ["I turn off the power and wear gloves."],
+            "1": ["I am always careful."]
+          },
+          "correction": "List concrete steps: switch off, lock and tag, test for voltage, and wear the right protective equipment."
+        },
+        {
+          "id": "standards",
+          "name": "Standards awareness",
+          "description": "Refers to the Philippine Electrical Code or workplace procedures.",
+          "key_points": ["mentions the Philippine Electrical Code or a standard", "follows supervisor or company procedure"],
+          "anchors": {
+            "5": ["I follow the Philippine Electrical Code for wire sizing and grounding, and I always follow the site's work permit procedure and my supervisor's instructions."],
+            "3": ["I follow the rules we learned in school."],
+            "1": ["I do what seems right."]
+          },
+          "correction": "Mention the Philippine Electrical Code or the workplace procedure you follow."
+        }
+      ]
+    },
+    {
+      "id": "ee.motor",
+      "text": {
+        "en": "A three-phase motor trips its overload relay repeatedly. How would you troubleshoot it?",
+        "fil": "Paulit-ulit na nagti-trip ang overload relay ng isang three-phase motor. Paano mo ito ita-troubleshoot?"
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "diagnosis",
+          "name": "Diagnostic steps",
+          "description": "Checks supply, load, motor and protection settings in a logical order.",
+          "key_points": ["checks for phase loss or voltage imbalance", "measures motor current against the nameplate", "checks mechanical load and bearings", "checks the overload relay setting"],
+          "anchors": {
+            "5": ["I would measure the voltage on all three phases for loss or imbalance, then clamp the current and compare it to the nameplate. I would check the overload setting, and inspect the load and bearings for mechanical binding. I would also megger the windings."],
+            "3": ["I would check the wiring and the motor for problems."],
+            "1": ["I would replace the overload relay."]
+          },
+          "correction": "Work through the causes in order: supply voltage, motor current, overload setting, then the mechanical load."
+        },
+        {
+          "id": "tools",
+          "name": "Correct instruments",
+          "description": "Names the right measuring instruments.",
+          "key_points": ["names a clamp meter or multimeter", "names an insulation resistance tester"],
+          "anchors": {
+            "5": ["I would use a clamp meter for current, a multimeter for voltage, and an insulation resistance tester for the windings."],
+            "3": ["I would use a tester."],
+            "1": ["I would look at it."]
+          },
+          "correction": "Name the instruments you would use, such as a clamp meter and an insulation tester."
+        }
+      ]
+    }
+  ]
+}

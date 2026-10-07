@@ -1,0 +1,5 @@
+# PC runtime + dev tools.
+-r requirements-common.txt
+sentence-transformers   # pulls torch; PC only
+silero-vad              # convenience wrapper (PC)
+pytest

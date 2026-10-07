@@ -1,0 +1,110 @@
+{
+  "bank": "common",
+  "programs": ["CpE", "EE", "ECE"],
+  "status": "UNAPPROVED SAMPLE for development only. Replace with faculty-approved items in data/rubric (T0.3).",
+  "scale": [1, 2, 3, 4, 5],
+  "questions": [
+    {
+      "id": "common.intro",
+      "text": {
+        "en": "Please introduce yourself and tell me why you are applying for this on-the-job training.",
+        "fil": "Pakilala ang iyong sarili at sabihin kung bakit ka nag-aapply sa on-the-job training na ito."
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "relevance",
+          "name": "Relevant background",
+          "description": "Connects program, skills or projects to the training role.",
+          "key_points": ["names their program and year", "mentions a skill or project related to the role", "gives a reason connected to the company or role"],
+          "anchors": {
+            "5": ["I am a fourth-year Computer Engineering student. I built an IoT attendance system with an ESP32 for our capstone, and I want to train here because your team develops embedded products, which is the field I want to grow in."],
+            "3": ["I am a Computer Engineering student. I like programming and I want to gain experience in a real company."],
+            "1": ["I am a student. I need to do OJT because it is required."]
+          },
+          "correction": "Link your introduction to the role: name one project or skill that fits the job and say why this company in particular."
+        },
+        {
+          "id": "clarity",
+          "name": "Clear and concise",
+          "description": "Organized answer, about 30 to 60 seconds, no rambling.",
+          "key_points": ["states who they are first", "ends with why they are applying"],
+          "anchors": {
+            "5": ["Good morning. I am Ana, a fourth-year Electronics Engineering student. My strengths are circuit design and troubleshooting, which I used in our PCB project. I am applying because I want hands-on experience in your testing department."],
+            "3": ["So, I am Ana, I study electronics, and I also do some projects, like many projects in school, and I want to apply here because it is near and I want experience."],
+            "1": ["Um, I don't know, I am just, ano, a student here, yeah."]
+          },
+          "correction": "Use a simple order: who you are, what you can do, why you want this training. Keep it under one minute."
+        }
+      ]
+    },
+    {
+      "id": "common.teamwork",
+      "text": {
+        "en": "Tell me about a time you worked in a team and faced a disagreement. What did you do?",
+        "fil": "Ikuwento ang isang pagkakataon na nagtrabaho ka sa isang team at nagkaroon ng hindi pagkakasundo. Ano ang ginawa mo?"
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "star",
+          "name": "Situation, action, result",
+          "description": "Describes a specific situation, their own action, and the result.",
+          "key_points": ["describes a specific situation", "explains what they personally did", "states the result or outcome"],
+          "anchors": {
+            "5": ["In our microprocessors project, two members wanted different sensors. I suggested we test both for one day and compare accuracy. The ultrasonic sensor won, everyone agreed, and we finished a week early."],
+            "3": ["We had a disagreement in a group project about the design. We talked about it and eventually we agreed and finished the project."],
+            "1": ["I always get along with everyone so we never had problems."]
+          },
+          "correction": "Tell one real story in three parts: the situation, what you did, and how it ended."
+        },
+        {
+          "id": "ownership",
+          "name": "Personal contribution",
+          "description": "Shows their own role and what they learned, without blaming others.",
+          "key_points": ["uses I statements for their role", "mentions what they learned"],
+          "anchors": {
+            "5": ["I took the role of mediator. I listened to both sides, proposed a test, and documented the results. I learned that data settles arguments faster than opinions."],
+            "3": ["We all decided together what to do and it worked out fine."],
+            "1": ["My groupmates were lazy so I did everything myself."]
+          },
+          "correction": "Say clearly what you did yourself and one thing you learned from it."
+        }
+      ]
+    },
+    {
+      "id": "common.weakness",
+      "text": {
+        "en": "What is one weakness you are working on, and how are you improving it?",
+        "fil": "Ano ang isang kahinaan na pinagtatrabahuhan mo, at paano mo ito pinapabuti?"
+      },
+      "approved_by": null, "approved_on": null,
+      "criteria": [
+        {
+          "id": "honesty",
+          "name": "Genuine weakness",
+          "description": "Names a real, work-relevant weakness, not a disguised strength.",
+          "key_points": ["names a specific weakness", "explains how it affects their work"],
+          "anchors": {
+            "5": ["I used to underestimate how long debugging takes, so I missed some deadlines in our embedded systems course."],
+            "3": ["Sometimes I am not very confident when speaking."],
+            "1": ["My weakness is that I am a perfectionist and I work too hard."]
+          },
+          "correction": "Pick a real weakness that matters at work, and explain briefly how it affected you."
+        },
+        {
+          "id": "improvement",
+          "name": "Improvement plan",
+          "description": "Describes concrete steps already taken to improve.",
+          "key_points": ["describes a concrete action", "mentions progress or a result"],
+          "anchors": {
+            "5": ["Now I add a debugging buffer to every task estimate and track my actual time in a spreadsheet. This semester I submitted every lab on time."],
+            "3": ["I am trying to improve it by practicing more."],
+            "1": ["I don't really know how to fix it."]
+          },
+          "correction": "Add a specific action you are taking and one sign that it is working."
+        }
+      ]
+    }
+  ]
+}

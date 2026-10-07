@@ -1,0 +1,46 @@
+# Model registry (plan section 3). Weights live in models/ (gitignored).
+# Fetch them with: python -m offline.download_models --profile pc
+# size_mb values are approximate; replace with measured values in T2.1 / T4.3.
+
+asr:   # faster-whisper (CTranslate2) repos on Hugging Face; downloaded into models/whisper/
+  tiny:  {repo: "Systran/faster-whisper-tiny",  size_mb_int8: 40}
+  base:  {repo: "Systran/faster-whisper-base",  size_mb_int8: 75}
+  small: {repo: "Systran/faster-whisper-small", size_mb_int8: 250}
+
+vad:
+  silero:
+    file: silero_vad.onnx
+    url: "https://github.com/snakers4/silero-vad/raw/master/src/silero_vad/data/silero_vad.onnx"
+    size_mb: 2
+
+tts:
+  en_US-lessac-medium:
+    files:
+      en_US-lessac-medium.onnx: "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx"
+      en_US-lessac-medium.onnx.json: "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+    size_mb: 60
+  mms_tgl: {repo: "facebook/mms-tts-tgl", size_mb: 145, runtime: offline_only}
+
+vision:
+  face_detector:
+    file: blaze_face_short_range.tflite
+    url: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite"
+    size_mb: 1
+  face_landmarker:
+    file: face_landmarker.task
+    url: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
+    size_mb: 4
+
+scoring:
+  multilingual-e5-small:
+    repo: "intfloat/multilingual-e5-small"
+    prefix: "query: "            # e5 models expect a prefix; same for both sides = symmetric similarity
+    onnx_dir: multilingual-e5-small-onnx-int8   # produced by T4.2 export
+    size_mb_fp32: 470
+    size_mb_int8: 120
+  paraphrase-multilingual-MiniLM-L12-v2:
+    repo: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    prefix: ""
+    onnx_dir: paraphrase-multilingual-MiniLM-L12-v2-onnx-int8
+    size_mb_fp32: 470
+    size_mb_int8: 120

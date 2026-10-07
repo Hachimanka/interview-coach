@@ -1,0 +1,11 @@
+# Training and export. PC (or Colab) only.
+-r requirements-pc.txt
+torch
+transformers
+peft                    # Whisper LoRA (T3.4)
+datasets
+optimum[onnxruntime]    # export embedder to ONNX int8 (T4.2)
+jiwer                   # WER
+pandas
+matplotlib
+jupyter

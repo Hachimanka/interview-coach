@@ -1,0 +1,68 @@
+# PC profile: accurate settings for development (plan section 10, "PC value").
+profile: pc
+
+paths:
+  models_dir: models
+  cache_dir: cache
+  rubric_dir: data/rubric        # approved rubric (T0.3); falls back to samples/rubric
+  sessions_dir: data/sessions    # saved reports (gitignored)
+
+audio:
+  sample_rate: 16000
+  input_device: null             # null = system default mic
+  vad_threshold: 0.5
+  min_speech_ms: 250
+  segment_silence_ms: 600        # silence that closes a speech segment
+  max_segment_s: 15              # force-split long segments for streaming ASR
+  long_pause_s: 3.0              # pause counted as "long" in the report
+  end_of_answer_silence_s: 4.0   # fallback if Done is not pressed (Q1)
+
+asr:
+  backend: faster_whisper        # faster_whisper | whispercpp
+  model: small                      # multilingual only (no .en models)
+  compute_type: float32
+  beam_size: 5
+  cpu_threads: 0                # 0 = auto
+  device: cpu
+  language: null                 # null = auto-detect EN / Filipino
+  initial_prompt: "Umm, let me think, uh... So, ano, I think, um, yeah."   # keeps fillers in the transcript
+
+tts:
+  mode: live                       # live | cache
+  english_voice: en_US-lessac-medium
+  filipino_backend: mms_tgl      # pre-synthesized only
+
+vision:
+  camera_index: 0
+  width: 1280
+  height: 720
+  fps: 30
+  hfov_deg: 60                   # camera horizontal field of view, for turn angle
+  gaze_yaw_max_deg: 15           # looking at robot if |yaw| and |pitch| under these
+  gaze_pitch_max_deg: 15
+  iris_offset_max: 0.30          # 0 = iris centered, 1 = at eye corner
+
+scoring:
+  backend: sentence_transformers                 # sentence_transformers | onnx_int8
+  embedder: multilingual-e5-small
+  when: immediate                    # immediate | background | end_of_session
+  level_temperature: 0.02        # softmax sharpness over anchor levels (calibrated on samples; re-tune in T2.2)
+  key_point_threshold: 0.85      # cosine to count a key point as covered (recorded as a T3.1 feature)
+  key_points_in_feedback: false  # descriptive key points do not separate good/poor answers with embeddings (v0 finding)
+
+
+delivery:
+  wpm_slow: 100                  # below this: "speak a little faster" (tune in T2.4)
+  wpm_fast: 170                  # above this: "slow down"
+  fillers_per_min_max: 4         # above this: filler-word tip
+  latency_slow_s: 5              # long silence before starting the answer
+
+face:
+  fps: 60
+  effects: true
+  host: 127.0.0.1
+  websocket_port: 8765
+
+session:
+  questions_per_session: 5
+  answer_time_limit_s: 120
