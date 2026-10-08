@@ -57,7 +57,7 @@ def main() -> None:
     for key, texts in items:
         for lang in langs:
             text = texts.get(lang)
-            if not text or (cache.has(key, lang) and not args.force):
+            if not text or (cache.text(key, lang) == text and not args.force):
                 continue
             audio, sr = engines[lang](text)
             cache.save(key, lang, text, build_speech(text, audio, sr))

@@ -9,5 +9,5 @@ class WhisperCppBackend(ASRBackend):
     def __init__(self, cfg):
         raise NotImplementedError("whisper.cpp backend is planned for T4.2; use asr.backend: faster_whisper")
 
-    def transcribe(self, audio, sample_rate=16000, language=None):
+    def transcribe(self, audio, sample_rate=16000, language=None, prompt=None):
         raise NotImplementedError

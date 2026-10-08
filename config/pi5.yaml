@@ -25,6 +25,7 @@ asr:
   cpu_threads: 2                # 0 = auto
   device: cpu
   language: null                 # null = auto-detect EN / Filipino
+  languages: [en, tl]            # auto-detect chooses only between these (tl = Tagalog / Filipino)
   initial_prompt: "Umm, let me think, uh... So, ano, I think, um, yeah."   # keeps fillers in the transcript
 
 tts:
@@ -56,6 +57,17 @@ delivery:
   wpm_fast: 170                  # above this: "slow down"
   fillers_per_min_max: 4         # above this: filler-word tip
   latency_slow_s: 5              # long silence before starting the answer
+
+voice:
+  enabled: true                  # spoken commands for every on-screen choice (no touch screen needed)
+  auto_language: true            # the robot follows the language the student speaks (English / Filipino)
+  language_switch_confidence: 0.6   # how sure Whisper must be before the robot switches language mid-session
+  command_silence_ms: 500        # pause that ends a spoken command
+  command_max_s: 6
+  retries: 2                     # times the robot says "I didn't catch that" before it just keeps waiting
+  choice_timeout_s: 60           # nobody answers a choice screen: consent counts as No, others end the session
+  no_speech_prob_max: 0.6        # reject noise that Whisper turned into words
+  avg_logprob_min: -1.2
 
 face:
   fps: 24

@@ -71,5 +71,23 @@ def test_say_sends_mouth_and_cues(server, monkeypatch):
     assert msgs[-1] == {"type": "state", "state": "idle"} or face.state == "idle"
 
 
+def test_mic_level_reaches_page_and_is_not_replayed(server):
+    face = FaceController(server)
+    with connect(f"ws://127.0.0.1:{server.ws_port}") as ws:
+        _drain(ws, 0.1)
+        face.hear(np.zeros(512, dtype=np.float32))
+        time.sleep(0.1)
+        face.hear(np.full(512, 0.2, dtype=np.float32))
+        levels = [m["value"] for m in _drain(ws) if m["type"] == "level"]
+    assert levels == [0.0, 1.0]
+    with connect(f"ws://127.0.0.1:{server.ws_port}") as ws:
+        assert not [m for m in _drain(ws) if m["type"] == "level"]
+
+
+def test_page_options_follow_profile():
+    assert FaceServer(ws_port=1, fps=24, effects=False).url.endswith("?ws=1&fps=24&fx=0")
+    assert FaceServer(ws_port=1).url.endswith("?ws=1")
+
+
 def test_no_negative_expressions():
     assert not {"sad", "angry", "disappointed", "frown"} & set(ctl.STATES)

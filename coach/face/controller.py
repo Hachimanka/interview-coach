@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import time
 
+import numpy as np
 import sounddevice as sd
 
 from coach.face.server import FaceServer
@@ -15,6 +16,8 @@ from coach.tts.cache import Speech
 
 STATES = ("idle", "greeting", "talking", "listening", "waiting", "thinking", "closing")
 UPDATE_HZ = 30
+LEVEL_HZ = 15                      # mic level updates to the page
+LEVEL_DB = (-50.0, -15.0)          # RMS range mapped to 0..1
 
 
 class FaceController:
@@ -24,6 +27,7 @@ class FaceController:
         self.state = None
         self.nod_hook = nod            # T4.5: callable that also nods the arm
         self._last_nod = 0.0
+        self._last_level = 0.0
         self.set_state("idle")
 
     def set_state(self, state: str) -> None:
@@ -39,9 +43,20 @@ class FaceController:
     def hud(self, timer: str = "", question: str = "") -> None:
         self.server.send({"type": "hud", "timer": timer, "q": question})
 
-    def panel(self, kind: str, options: list[str] | None = None, title: str = "") -> None:
-        """kind: none | consent | program | choice | answer (shows Done). Taps come back as events named after kind."""
-        self.server.send({"type": "panel", "kind": kind, "options": options or [], "title": title})
+    def panel(self, kind: str, options: list[str] | None = None, title: str = "",
+              hints: list[str] | None = None) -> None:
+        """kind: none | consent | program | choice | answer (shows Done). Taps come back as events named after kind.
+        hints: what to say for each option (voice commands); for "answer", one hint for Done."""
+        self.server.send({"type": "panel", "kind": kind, "options": options or [], "title": title,
+                          "hints": hints or []})
+
+    def listen(self, kind: str) -> None:
+        """The robot is now waiting for a spoken choice (kind) or an answer; "none" = not listening."""
+        self.server.send({"type": "listen", "kind": kind})
+
+    def heard(self, text: str, picked: str | None) -> None:
+        """Show what the robot heard and which button it matched (None = not understood)."""
+        self.server.send({"type": "heard", "text": text, "picked": picked})
 
     def look_at(self, obs) -> None:
         """Eyes follow the student. Camera and screen face the same way, so a student on the
@@ -52,6 +67,16 @@ class FaceController:
         x = max(-1.0, min(1.0, (0.5 - obs.center[0]) * 2))
         y = max(-1.0, min(1.0, (obs.center[1] - 0.45) * 2))
         self.server.send({"type": "gaze", "x": round(x, 2), "y": round(y, 2), "present": True})
+
+    def hear(self, block) -> None:
+        """While listening: the face and waveform react to how loud the student is (0..1)."""
+        now = time.monotonic()
+        if block is None or now - self._last_level < 1 / LEVEL_HZ:
+            return
+        self._last_level = now
+        db = 20 * np.log10(float(np.sqrt(np.mean(np.square(block)))) + 1e-9)
+        lo, hi = LEVEL_DB
+        self.server.send({"type": "level", "value": round(min(max((db - lo) / (hi - lo), 0.0), 1.0), 2)})
 
     def maybe_nod(self, every_s: float = 8.0) -> None:
         """While listening: a slow nod every few seconds (face + arm via nod_hook)."""

@@ -20,6 +20,7 @@ from coach.profile import load_profile, make_asr, make_embedder, make_tts, make_
 from coach.scoring.rubric import load_bank
 from coach.scoring.score import Scorer
 from coach.session import report as rpt
+from coach.session.lines import text as screen_text
 from coach.session.state_machine import Session
 from coach.tts.cache import SpeechCache, SpeechSource
 
@@ -41,7 +42,7 @@ def main() -> None:
     speech = SpeechSource(SpeechCache(resolve(cfg, cfg.paths.cache_dir)), make_tts(cfg))
     print(f"[coach] models ready in {time.perf_counter() - t0:.1f}s")
 
-    server = FaceServer(cfg.face.host, cfg.face.websocket_port).start()
+    server = FaceServer(cfg.face.host, cfg.face.websocket_port, cfg.face.fps, cfg.face.effects).start()
     face = FaceController(server)
     print(f"[coach] face page: {server.url}")
     if not args.no_open:
@@ -63,14 +64,12 @@ def main() -> None:
                 result = session.run()
                 report = rpt.build_report(result)
                 if result["answers"]:
-                    keep = args.record or _ask_keep(face, server, result["meta"].get("language", "en"))
-                    if keep:
+                    if args.record or session.ask_keep():
                         out = sessions_dir / time.strftime("%Y%m%d-%H%M%S")
                         audio = {a.question.id: a.audio for a in result["answers"]} if args.record else None
                         path = rpt.save(report, out, audio)
                         print(f"[coach] report saved: {path}")
-                        face.subtitle("Your report is saved." if result["meta"].get("language") != "fil"
-                                      else "Na-save na ang iyong report.")
+                        face.subtitle(screen_text("saved", result["meta"].get("language", "en")))
                     else:
                         print("[coach] student chose not to keep the report; nothing saved")
                 s = report["summary"]
@@ -84,22 +83,6 @@ def main() -> None:
         if vision:
             vision.stop()
         server.stop()
-
-
-def _ask_keep(face, server, lang: str) -> bool:
-    face.set_state("closing")
-    yes, no = ("Keep it", "Delete it") if lang != "fil" else ("Itago", "Burahin")
-    face.panel("consent", [yes, no], "Keep your report on this device?" if lang != "fil"
-               else "Itago ang report sa device na ito?")
-    server.clear_events()
-    while True:
-        ev = server.next_event(timeout=60)
-        if ev is None or ev["name"] == "stop":
-            face.panel("none")
-            return False
-        if ev["name"] == "consent":
-            face.panel("none")
-            return ev["value"] == yes
 
 
 if __name__ == "__main__":
