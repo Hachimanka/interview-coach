@@ -1,7 +1,7 @@
 """Face UI transport (T1.9): HTTP server for the page + WebSocket for live state.
 
-server -> page : {"type": "state"|"mouth"|"subtitle"|"gaze"|"hud"|"panel"|"nod", ...}
-page -> server : {"type": "event", "name": "consent"|"program"|"done"|"stop", "value": ...}
+server -> page : {"type": "state"|"mouth"|"subtitle"|"gaze"|"level"|"hud"|"panel"|"listen"|"heard"|"nod", ...}
+page -> server : {"type": "event", "name": "consent"|"program"|"done"|"stop"|"lang", "value": ...}
 
 The last message of each type is replayed to new connections, so a page refresh
 (or the kiosk browser restarting) restores the current face immediately.
@@ -27,8 +27,9 @@ class _QuietHandler(SimpleHTTPRequestHandler):
 
 
 class FaceServer:
-    def __init__(self, host: str = "127.0.0.1", ws_port: int = 8765):
+    def __init__(self, host: str = "127.0.0.1", ws_port: int = 8765, fps: int | None = None, effects: bool = True):
         self.host, self.ws_port, self.http_port = host, ws_port, ws_port + 1
+        self.fps, self.effects = fps, effects   # page frame cap and glow on/off (off on the Pi)
         self.events: queue.Queue[dict] = queue.Queue()
         self._clients: set = set()
         self._last: dict[str, dict] = {}
@@ -38,7 +39,8 @@ class FaceServer:
 
     @property
     def url(self) -> str:
-        return f"http://{self.host}:{self.http_port}/index.html?ws={self.ws_port}"
+        opts = (f"&fps={self.fps}" if self.fps else "") + ("" if self.effects else "&fx=0")
+        return f"http://{self.host}:{self.http_port}/index.html?ws={self.ws_port}{opts}"
 
     def start(self) -> "FaceServer":
         self._ws = serve(self._handler, self.host, self.ws_port)
@@ -78,7 +80,7 @@ class FaceServer:
     def send(self, msg: dict) -> None:
         data = json.dumps(msg, ensure_ascii=False)
         with self._lock:
-            if msg["type"] != "nod":
+            if msg["type"] not in ("nod", "level", "heard"):
                 self._last[msg["type"]] = msg
             clients = list(self._clients)
         for c in clients:

@@ -1,7 +1,9 @@
 """Simulated student for end-to-end session tests and gate G1 (T1.7).
 
-FakeMic plays Piper-spoken answers (+ trailing silence) each time the session starts listening;
-ScriptedStudent taps the touch panels. Everything runs silently and faster than real time.
+The simulated student reacts to what the face page is told: when the robot starts listening
+("listen" message) the student speaks into the FakeMic, a Piper-spoken answer or command.
+ScriptedStudent taps the buttons; VoiceStudent says the commands instead (no touch screen).
+Everything runs silently and faster than real time.
 
     python -m eval.simulate_session --sessions 3 --profile pc
 """
@@ -36,12 +38,16 @@ ANSWERS = [
 
 
 class FakeMic:
-    def __init__(self, answers: list[np.ndarray], tail_s: float = 5.0):
-        self.answers, self.tail = list(answers), np.zeros(int(tail_s * 16000), np.float32)
+    """Silence, except for what the simulated student says."""
+
+    def __init__(self, tail_s: float = 5.0):
+        self.tail = np.zeros(int(tail_s * 16000), np.float32)
         self._blocks: list[np.ndarray] = []
 
-    def clear(self) -> None:          # session calls this when listening starts
-        audio = self.answers.pop(0) if self.answers else np.zeros(16000, np.float32)
+    def clear(self) -> None:
+        self._blocks = []
+
+    def say(self, audio: np.ndarray) -> None:
         self._blocks = list(blocks(np.concatenate([np.zeros(8000, np.float32), audio, self.tail])))
 
     def read(self, timeout: float = 1.0):
@@ -49,27 +55,57 @@ class FakeMic:
 
 
 class ScriptedStudent:
-    """Intercepts panel messages and taps an answer, like a student on the touch screen."""
+    """Watches the messages to the face page: taps the buttons like a student with a mouse,
+    and answers out loud when the robot starts listening for an answer."""
 
-    def __init__(self, server: FaceServer, language="English", consent="Yes", program="CpE",
-                 stop_after_panels: int | None = None):
-        self.server, self.choices = server, {"choice": None, "consent": consent, "program": program}
-        self.language, self.stop_after, self.panels = language, stop_after_panels, 0
+    def __init__(self, server: FaceServer, mic: FakeMic, answers: list[np.ndarray], consent="Yes", program="CpE",
+                 language: str | None = None, stop_after_panels: int | None = None):
+        self.server, self.mic, self.answers = server, mic, list(answers)
+        self.choices = {"choice": None, "consent": consent, "program": program}
+        self.stop_after, self.panels = stop_after_panels, 0
         self._send = server.send
         server.send = self._intercept
+        if language:                          # like the operator pressing E / F
+            server.events.put({"type": "event", "name": "lang", "value": language})
 
     def _intercept(self, msg: dict) -> None:
         self._send(msg)
-        if msg["type"] != "panel" or msg["kind"] in ("none", "answer"):
-            return
-        self.panels += 1
-        if self.stop_after is not None and self.panels > self.stop_after:
-            self.server.events.put({"type": "event", "name": "stop"})
-            return
-        kind = msg["kind"]
-        value = (self.language if "English" in msg["options"] else msg["options"][0]) if kind == "choice" \
-            else self.choices[kind]
-        self.server.events.put({"type": "event", "name": kind, "value": value})
+        if msg["type"] == "listen" and msg["kind"] != "none":
+            self.on_listen(msg["kind"])
+        if msg["type"] == "panel" and msg["kind"] not in ("none", "answer"):
+            self.panels += 1
+            if self.stop_after is not None and self.panels > self.stop_after:
+                self.server.events.put({"type": "event", "name": "stop"})
+            else:
+                self.on_panel(msg["kind"], msg["options"])
+
+    def on_listen(self, kind: str) -> None:
+        if kind == "answer":
+            self.mic.say(self.answers.pop(0) if self.answers else np.zeros(16000, np.float32))
+
+    def on_panel(self, kind: str, options: list[str]) -> None:
+        self.server.events.put({"type": "event", "name": kind, "value": self.choices[kind] or options[0]})
+
+
+class VoiceStudent(ScriptedStudent):
+    """Never touches the screen: says every choice. `spoken` maps a screen to the audio to say there,
+    e.g. {"consent": <"yes">, "program": <"electronics">}; "keep" is the keep-report question."""
+
+    def __init__(self, server, mic, answers, spoken: dict[str, np.ndarray], **kw):
+        super().__init__(server, mic, answers, **kw)
+        self.spoken, self.consent_screens = spoken, 0
+
+    def on_listen(self, kind: str) -> None:
+        if kind == "answer":
+            return super().on_listen(kind)
+        if kind == "consent":                 # the 2nd consent-style screen is "keep the report?"
+            self.consent_screens += 1
+            kind = "consent" if self.consent_screens == 1 else "keep"
+        if kind in self.spoken:
+            self.mic.say(self.spoken[kind])
+
+    def on_panel(self, kind: str, options: list[str]) -> None:
+        pass
 
 
 def make_answers(cfg, texts=ANSWERS) -> list[np.ndarray]:
@@ -81,13 +117,28 @@ def make_answers(cfg, texts=ANSWERS) -> list[np.ndarray]:
     return out
 
 
-def run_simulated(cfg, answers, server, models, **student) -> dict:
+def run_simulated(cfg, answers, server, models, spoken: dict | None = None, wait: bool = False,
+                  keep: bool = False, **student) -> dict:
+    """spoken: use a VoiceStudent that says these commands instead of tapping.
+    wait: also run the idle "say start" screen. keep: also ask the keep-report question."""
     vad, asr, scorer, speech = models
-    ScriptedStudent(server, **student)
+    mic = FakeMic()
+    server.clear_events()
+    if spoken is None:
+        ScriptedStudent(server, mic, answers, **student)
+    else:
+        VoiceStudent(server, mic, answers, spoken, **student)
     face = FaceController(server, play_audio=False)
-    s = Session(cfg, face, FakeMic(answers), vad, asr, scorer, lambda p: load_bank(cfg, p), speech)
-    result = s.run()
-    server.send = server.__class__.send.__get__(server)   # remove interceptor
+    s = Session(cfg, face, mic, vad, asr, scorer, lambda p: load_bank(cfg, p), speech)
+    try:
+        if wait:
+            s.wait_for_student()
+        result = s.run()
+        if keep:
+            result["meta"]["kept"] = s.ask_keep()
+        result["meta"]["final_language"] = s.lang
+    finally:
+        server.send = server.__class__.send.__get__(server)   # remove interceptor
     return result
 
 

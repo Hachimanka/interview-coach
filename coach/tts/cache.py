@@ -62,6 +62,11 @@ class SpeechCache:
                                     "mouth": speech.mouth, "frame_s": speech.frame_s},
                                    ensure_ascii=False), encoding="utf-8")
 
+    def text(self, key: str, lang: str) -> str | None:
+        if not self.has(key, lang):
+            return None
+        return json.loads(self._paths(key, lang)[1].read_text(encoding="utf-8")).get("text")
+
     def load(self, key: str, lang: str) -> Speech:
         wav, meta = self._paths(key, lang)
         audio, sr = sf.read(wav, dtype="float32")
@@ -76,8 +81,12 @@ class SpeechSource:
         self.cache = cache
         self.tts = tts
 
+    def available(self, key: str, lang: str, text: str) -> bool:
+        """Can this line be spoken in this language? Filipino exists only as pre-made clips."""
+        return self.cache.text(key, lang) == text or (lang == "en" and self.tts is not None)
+
     def question(self, question_id: str, lang: str, text: str) -> Speech:
-        if self.cache.has(question_id, lang):
+        if self.cache.text(question_id, lang) == text:    # a clip made from older wording is not reused
             return self.cache.load(question_id, lang)
         return self.live(text, lang)
 
