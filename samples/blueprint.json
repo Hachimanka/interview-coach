@@ -1,0 +1,41 @@
+{
+  "status": "UNAPPROVED SAMPLE for development only. Faculty approve the competency slots (G0). Approved file: data/rubric/blueprint.json.",
+  "note": "One slot per rubric question. The generative interviewer writes its own wording for each slot (personalized with what the student said earlier), but the slot fixes WHAT the question must find out, and the answer is scored with that rubric question's criteria. If the AI's question fails the checks, the rubric question is asked as written.",
+  "slots": {
+    "common.intro": {
+      "competency": "Self-introduction and motivation",
+      "goal": "who the student is (course and year) and why they want this on-the-job training",
+      "callback": false
+    },
+    "common.teamwork": {
+      "competency": "Teamwork and handling disagreement",
+      "goal": "a real time they worked in a team and faced a disagreement: what happened, what they did, and the result",
+      "callback": true
+    },
+    "common.weakness": {
+      "competency": "Self-awareness and improvement",
+      "goal": "one honest weakness they are working on and the concrete steps they take to improve it",
+      "callback": true
+    },
+    "cpe.project": {
+      "competency": "CpE technical depth: a project they built",
+      "goal": "a hardware or software project they built: the problem it solved, the components or tools and why they chose them, and their own role and result",
+      "callback": true
+    },
+    "cpe.debugging": {
+      "competency": "CpE problem solving: debugging",
+      "goal": "their step-by-step method for finding and fixing a bug in a program or circuit, and the tools they use",
+      "callback": true
+    },
+    "ece.signal": {
+      "competency": "ECE signals: reducing sensor noise",
+      "goal": "how they would reduce noise in a sensor signal before it reaches a microcontroller, in hardware and software, and why",
+      "callback": true
+    },
+    "ece.pcb": {
+      "competency": "ECE design: printed circuit boards",
+      "goal": "what they consider when designing a printed circuit board, such as layout, grounding, trace width and testing, and any board they designed",
+      "callback": true
+    }
+  }
+}

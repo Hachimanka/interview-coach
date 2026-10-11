@@ -6,7 +6,9 @@ samples/rubric is used and every report is marked as a sample.
 """
 from __future__ import annotations
 
+import itertools
 import json
+import random
 from dataclasses import dataclass, field
 
 from coach.profile import PROJECT_ROOT, Config, resolve
@@ -22,6 +24,7 @@ class Criterion:
     key_points: list[str]
     anchors: dict[int, list[str]]   # score level -> example answers
     correction: str
+    follow_up: dict[str, str] | None = None   # approved follow-up question per language, asked when weak
 
 
 @dataclass
@@ -44,7 +47,7 @@ def _parse(data: dict) -> list[Question]:
     out = []
     for q in data["questions"]:
         crits = [Criterion(c["id"], c["name"], c["description"], c.get("key_points", []),
-                           {int(k): v for k, v in c["anchors"].items()}, c["correction"])
+                           {int(k): v for k, v in c["anchors"].items()}, c["correction"], c.get("follow_up"))
                  for c in q["criteria"]]
         out.append(Question(q["id"], q["text"], crits, q.get("approved_by"), data["bank"]))
     return out
@@ -70,10 +73,43 @@ def load_bank(cfg: Config, program: str) -> Bank:
     return bank
 
 
+def programs(cfg: Config) -> list[str]:
+    """Courses in scope (session.programs). The robot never asks the student which one."""
+    return list(cfg.session.get("programs") or ["CpE", "ECE"])
+
+
+def load_session_bank(cfg: Config) -> Bank:
+    """Every askable question for a session: common questions + the technical questions of every
+    program in scope. Which ones are asked is chosen by pick_questions()."""
+    bank = None
+    for p in programs(cfg):
+        b = load_bank(cfg, p)
+        if bank is None:
+            bank = Bank(is_sample=b.is_sample, source=b.source)
+        for q in b.questions:
+            if q.id not in {x.id for x in bank.questions}:
+                bank.questions.append(q)
+    return bank or Bank()
+
+
+def pick_questions(bank: Bank, n: int, vary: bool = True, rng: random.Random | None = None) -> list[Question]:
+    """Common questions first, then technical questions taking turns between the programs
+    (CpE, ECE, CpE, ...), so every session covers both courses. vary=True rotates which technical
+    questions are used from session to session."""
+    rng = rng or random.Random()
+    common = [q for q in bank.questions if q.bank == "common"]
+    by_program: dict[str, list[Question]] = {}
+    for q in bank.questions:
+        if q.bank != "common":
+            by_program.setdefault(q.bank, []).append(q)
+    if vary:
+        for qs in by_program.values():
+            rng.shuffle(qs)
+    technical = [q for group in itertools.zip_longest(*by_program.values()) for q in group if q]
+    n_tech = min(len(technical), max(len(by_program), n - len(common)))   # at least one per program
+    return (common[: n - n_tech] + technical[:n_tech])[:n]
+
+
 def all_questions(cfg: Config) -> list[Question]:
-    """Every askable question across programs (for pre-synthesizing audio)."""
-    seen: dict[str, Question] = {}
-    for program in ("CpE", "EE", "ECE"):
-        for q in load_bank(cfg, program).questions:
-            seen[q.id] = q
-    return list(seen.values())
+    """Every askable question in scope (for pre-synthesizing audio)."""
+    return load_session_bank(cfg).questions

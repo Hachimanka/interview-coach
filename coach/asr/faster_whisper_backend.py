@@ -9,14 +9,20 @@ from coach.profile import Config, models_dir
 
 
 class FasterWhisperBackend(ASRBackend):
-    def __init__(self, cfg: Config):
+    """fast=True is the command recognizer: greedy decoding, no timestamps, and the caller always
+    passes the language (auto-detect costs a second encoder pass). ~9x faster on the PC profile."""
+
+    def __init__(self, cfg: Config, model: str | None = None, compute_type: str | None = None,
+                 beam_size: int | None = None, fast: bool = False):
         a = cfg.asr
-        local = models_dir(cfg) / "whisper" / a.model
-        source = str(local) if (local / "model.bin").exists() else cfg.registry["asr"][a.model]["repo"]
-        self.model = WhisperModel(source, device=a.device, compute_type=a.compute_type,
+        model = model or a.model
+        local = models_dir(cfg) / "whisper" / model
+        source = str(local) if (local / "model.bin").exists() else cfg.registry["asr"][model]["repo"]
+        self.model = WhisperModel(source, device=a.device, compute_type=compute_type or a.compute_type,
                                   cpu_threads=a.cpu_threads,
                                   download_root=str(models_dir(cfg) / "whisper"))
-        self.beam_size = a.beam_size
+        self.beam_size = beam_size or a.beam_size
+        self.fast = fast
         self.default_language = a.language
         self.initial_prompt = a.initial_prompt
         self.languages = list(a.get("languages") or [])   # auto-detect picks only among these
@@ -26,7 +32,8 @@ class FasterWhisperBackend(ASRBackend):
             audio,
             language=language,
             beam_size=self.beam_size,
-            word_timestamps=True,
+            word_timestamps=not self.fast,
+            without_timestamps=self.fast,
             initial_prompt=self.initial_prompt if prompt is None else (prompt or None),
             vad_filter=False,               # our Silero segmenter already did this
             condition_on_previous_text=False,

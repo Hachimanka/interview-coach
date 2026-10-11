@@ -53,6 +53,7 @@ def main() -> None:
         engines["fil"] = mms.synthesize
 
     items = [(q.id, q.text) for q in all_questions(cfg)] + [(f"line.{k}", v) for k, v in LINES.items()]
+    items += [(f"{q.id}.fu.{c.id}", c.follow_up) for q in all_questions(cfg) for c in q.criteria if c.follow_up]
     made = 0
     for key, texts in items:
         for lang in langs:

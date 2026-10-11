@@ -48,9 +48,9 @@ def test_state_replayed_to_new_client(server):
 
 def test_touch_events_reach_session(server):
     with connect(f"ws://127.0.0.1:{server.ws_port}") as ws:
-        ws.send(json.dumps({"type": "event", "name": "program", "value": "EE"}))
+        ws.send(json.dumps({"type": "event", "name": "program", "value": "ECE"}))
         ev = server.next_event(timeout=2)
-    assert ev["name"] == "program" and ev["value"] == "EE"
+    assert ev["name"] == "program" and ev["value"] == "ECE"
 
 
 def test_say_sends_mouth_and_cues(server, monkeypatch):

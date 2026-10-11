@@ -17,10 +17,6 @@ LINES: dict[str, dict[str, str]] = {
         "en": "Your answers will be recorded on this device to give you feedback. Do you agree to continue?",
         "fil": "Ire-record ang iyong mga sagot sa device na ito para mabigyan ka ng feedback. Pumapayag ka bang magpatuloy?",
     },
-    "program": {
-        "en": "What is your program? Say computer, electrical, or electronics.",
-        "fil": "Ano ang iyong programa? Sabihin ang computer, electrical, o electronics.",
-    },
     "instructions": {
         "en": "I will ask you a few questions. Answer out loud. When you finish each answer, say: that's my answer.",
         "fil": "Magtatanong ako ng ilang tanong. Sumagot nang malakas. Kapag tapos ka na sa bawat sagot, sabihin: iyon na po ang sagot ko.",
@@ -33,6 +29,24 @@ LINES: dict[str, dict[str, str]] = {
         "en": "Sorry, I didn't catch that. Please say it again.",
         "fil": "Paumanhin, hindi ko narinig. Pakiulit po.",
     },
+    # Short acknowledgments right after an answer (rotated so the robot does not sound repetitive).
+    # They are neutral on purpose: they never praise or criticize before the rubric score exists.
+    "ack_1": {"en": "I see.", "fil": "Naiintindihan ko po."},
+    "ack_2": {"en": "Okay, I understand.", "fil": "Sige po, naiintindihan ko."},
+    "ack_3": {"en": "Alright.", "fil": "Okay po."},
+    "reassure": {    # the student said they are nervous or stuck; neutral, never judges the answer
+        "en": "That's okay. Take a breath, and continue whenever you're ready.",
+        "fil": "Ayos lang po. Huminga nang malalim, at magpatuloy kapag handa ka na.",
+    },
+    "laugh": {       # only when mirroring the student's laughter, at most once per session.
+        # A real recorded chuckle can replace cache/questions/line.laugh.en.wav / .fil.wav.
+        "en": "Haha!",
+        "fil": "Haha!",
+    },
+    "tell_more": {   # follow-up when the answer was very short
+        "en": "Could you tell me a bit more? For example, a specific experience or project.",
+        "fil": "Maaari mo bang dagdagan pa? Halimbawa, isang tiyak na karanasan o proyekto.",
+    },
     "take_your_time": {
         "en": "Take your time.",
         "fil": "Dahan-dahan lang.",
@@ -42,8 +56,16 @@ LINES: dict[str, dict[str, str]] = {
         "fil": "Salamat. Susunod na tanong.",
     },
     "closing": {
-        "en": "That was the last question. Thank you! Your report is ready.",
-        "fil": "Iyon na ang huling tanong. Salamat! Handa na ang iyong report.",
+        "en": "That was the last question. Thank you for your answers!",
+        "fil": "Iyon na ang huling tanong. Salamat sa iyong mga sagot!",
+    },
+    "processing": {   # said only while scoring is still running
+        "en": "Please give me a moment while I process your results.",
+        "fil": "Sandali lang po, pinoproseso ko ang iyong resulta.",
+    },
+    "ready": {        # said only after every answer has actually been scored
+        "en": "Your results are ready.",
+        "fil": "Handa na ang iyong resulta.",
     },
     "keep": {
         "en": "Do you want to keep your report on this device? Say keep it, or delete it.",
@@ -55,17 +77,33 @@ LINES: dict[str, dict[str, str]] = {
     },
 }
 
+# Generative mode only (English sessions, coach/session/generative.py): spoken live or from cache key gen.<name>.
+# Not part of LINES, so they never affect whether a Filipino session is possible.
+GEN_LINES: dict[str, str] = {
+    "ask_name": "Before we begin, may I know your first name?",
+    "name_retry": "Sorry, I didn't catch that. Could you say just your first name?",
+    "name_skip": "No problem. Let's begin.",
+    # said only if the next question is not written yet (covers the AI's thinking time, like a person would)
+    "think_1": "Okay, let me think about my next question.",
+    "think_2": "Alright, give me a second.",
+    "think_3": "Hmm, let me see.",
+}
+
 # On-screen text (not spoken). "both" is shown while the student's language is still unknown.
 TEXT: dict[str, dict[str, str]] = {
-    "start_voice": {"both": "Say “start” or “simulan” to begin."},
-    "start_touch": {"both": "Tap the screen or sit in front of me to start practicing."},
+    "start_voice": {"en": "Say “start” to begin.", "fil": "Sabihin ang “simulan” para magsimula.",
+                    "both": "Say “start” or “simulan” to begin."},
+    "start_touch": {"en": "Tap Start to begin practicing.", "fil": "Pindutin ang Simulan para magsimula.",
+                    "both": "Tap the screen to start practicing."},
     "consent_title": {"en": "Do you agree to continue?", "fil": "Pumapayag ka ba?",
                       "both": "Do you agree to continue? / Pumapayag ka ba?"},
-    "program_title": {"en": "Choose your program", "fil": "Piliin ang iyong programa",
-                      "both": "Choose your program / Piliin ang iyong programa"},
     "keep_title": {"en": "Keep your report on this device?", "fil": "Itago ang report sa device na ito?",
                    "both": "Keep your report on this device? / Itago ang report?"},
+    "name_title": {"en": "Did I get your name right?", "fil": "Tama ba ang pangalan mo?",
+                   "both": "Did I get your name right?"},
     "saved": {"en": "Your report is saved.", "fil": "Na-save na ang iyong report."},
+    "processing": {"en": "Processing your results… {done} of {total}",
+                   "fil": "Pinoproseso ang iyong resulta… {done} sa {total}"},
 }
 
 # Button labels per command.

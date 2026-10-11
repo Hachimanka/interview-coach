@@ -14,8 +14,11 @@ import sounddevice as sd
 from coach.face.server import FaceServer
 from coach.tts.cache import Speech
 
-STATES = ("idle", "greeting", "talking", "listening", "waiting", "thinking", "closing")
+STATES = ("idle", "greeting", "talking", "listening", "waiting", "thinking", "closing", "amused")
 UPDATE_HZ = 30
+# sounddevice closes the stream when the last sample reaches the driver, while the sound card still
+# holds ~0.1-0.3 s of audio: without this padding the last syllable of every line was cut off.
+TAIL_PAD_S = 0.35
 LEVEL_HZ = 15                      # mic level updates to the page
 LEVEL_DB = (-50.0, -15.0)          # RMS range mapped to 0..1
 
@@ -87,18 +90,20 @@ class FaceController:
             if self.nod_hook:
                 self.nod_hook()
 
-    def say(self, speech: Speech, keep_subtitle: str | None = None, stop_check=None) -> bool:
+    def say(self, speech: Speech, keep_subtitle: str | None = None, stop_check=None,
+            expression: str = "talking") -> bool:
         """Play speech with lip-sync and timed subtitles. Blocks until done.
         Returns False if stop_check() became true mid-sentence (playback is cut)."""
         prev = self.state
-        self.set_state("talking")
+        self.set_state(expression)            # "amused" while mirroring laughter, else "talking"
         if not self.play_audio:
             for c in speech.cues:
                 self.subtitle(c.text)
             self.subtitle(keep_subtitle or "", persist=bool(keep_subtitle))
             self.set_state(prev if prev != "talking" else "idle")
             return True
-        sd.play(speech.audio, speech.sample_rate)
+        pad = np.zeros(int(TAIL_PAD_S * speech.sample_rate), dtype=np.float32)
+        sd.play(np.concatenate([speech.audio.astype(np.float32), pad]), speech.sample_rate)
         t0 = time.monotonic()
         last_cue, last_mouth, completed = None, None, True
         while (t := time.monotonic() - t0) < speech.duration:

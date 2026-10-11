@@ -4,6 +4,9 @@ The landmarker finds the face itself, so no separate face detector runs (lighter
 """
 from __future__ import annotations
 
+import contextlib
+import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +26,22 @@ class FaceObservation:
     gaze: Gaze | None = None
 
 
+@contextlib.contextmanager
+def quiet_native_logs():
+    """MediaPipe's C++ code prints INFO/WARNING lines to stderr while it starts ("Logging before
+    InitGoogle", XNNPACK, feedback manager) and ignores GLOG_minloglevel. Silence the stderr file
+    descriptor only for that moment; Python exceptions still propagate normally."""
+    sys.stderr.flush()
+    saved = os.dup(2)
+    try:
+        with open(os.devnull, "w") as null:
+            os.dup2(null.fileno(), 2)
+            yield
+    finally:
+        os.dup2(saved, 2)
+        os.close(saved)
+
+
 class FaceTracker:
     def __init__(self, model_path: str | Path, hfov_deg: float = 60, yaw_max: float = 15,
                  pitch_max: float = 15, iris_max: float = 0.3, video: bool = True):
@@ -32,10 +51,13 @@ class FaceTracker:
             num_faces=1,
             output_facial_transformation_matrixes=True,
         )
-        self.landmarker = FaceLandmarker.create_from_options(opts)
         self.video = video
         self.hfov = hfov_deg
         self.limits = (yaw_max, pitch_max, iris_max)
+        self._last_ts = -1
+        with quiet_native_logs():            # creation + first inference print the startup logs
+            self.landmarker = FaceLandmarker.create_from_options(opts)
+            self.process(np.zeros((64, 64, 3), np.uint8), 0)
 
     @classmethod
     def from_config(cls, cfg, video: bool = True) -> "FaceTracker":
@@ -47,8 +69,12 @@ class FaceTracker:
 
     def process(self, rgb: np.ndarray, timestamp_ms: int = 0) -> FaceObservation:
         image = mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(rgb))
-        res = (self.landmarker.detect_for_video(image, timestamp_ms) if self.video
-               else self.landmarker.detect(image))
+        if self.video:   # video mode requires strictly increasing timestamps (the warm-up frame used 0)
+            timestamp_ms = max(int(timestamp_ms), self._last_ts + 1)
+            self._last_ts = timestamp_ms
+            res = self.landmarker.detect_for_video(image, timestamp_ms)
+        else:
+            res = self.landmarker.detect(image)
         if not res.face_landmarks:
             return FaceObservation(False)
         pts = np.array([(p.x, p.y, p.z) for p in res.face_landmarks[0]], dtype=np.float32)

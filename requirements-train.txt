@@ -9,3 +9,7 @@ jiwer                   # WER
 pandas
 matplotlib
 jupyter
+
+trl                     # LoRA fine-tune of the interviewer model (G4)
+accelerate
+bitsandbytes            # 4-bit teacher model for synthetic data (G3, Colab GPU)

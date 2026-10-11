@@ -15,7 +15,10 @@ audio:
   segment_silence_ms: 600        # silence that closes a speech segment
   max_segment_s: 15              # force-split long segments for streaming ASR
   long_pause_s: 3.0              # pause counted as "long" in the report
-  end_of_answer_silence_s: 4.0   # fallback if Done is not pressed (Q1)
+  end_of_answer_silence_s: 5.0   # after the student has spoken: this much silence = answer done
+  take_your_time_s: 5.0          # student has not started yet: face shows "Take your time"
+  no_answer_timeout_s: 15.0      # student never started: move on to the next question
+  echo_guard_ms: 400             # ignore the mic this long after the robot stops talking (speaker tail / room echo)
 
 asr:
   backend: faster_whisper        # faster_whisper | whispercpp
@@ -60,12 +63,15 @@ delivery:
 
 voice:
   enabled: true                  # spoken commands for every on-screen choice (no touch screen needed)
-  auto_language: true            # the robot follows the language the student speaks (English / Filipino)
-  language_switch_confidence: 0.6   # how sure Whisper must be before the robot switches language mid-session
+  start_language: en             # the robot starts in English
+  auto_language: true            # the student's FIRST spoken reply picks the language once ("simulan"/"oo" = Filipino); locked for the whole interview
   command_silence_ms: 500        # pause that ends a spoken command
   command_max_s: 6
+  command_model: base            # small fast Whisper for spoken commands (~0.8 s on the PC vs ~7.5 s with the answer model)
+  command_compute_type: int8
   retries: 2                     # times the robot says "I didn't catch that" before it just keeps waiting
-  choice_timeout_s: 60           # nobody answers a choice screen: consent counts as No, others end the session
+  choice_timeout_s: 60           # silence on a choice screen: the robot asks again (choice_reprompts), then gives up
+  choice_reprompts: 1            # consent still counts as No if nobody ever answers
   no_speech_prob_max: 0.6        # reject noise that Whisper turned into words
   avg_logprob_min: -1.2
 
@@ -77,4 +83,40 @@ face:
 
 session:
   questions_per_session: 5
+  programs: [CpE, ECE]           # courses in scope; the robot never asks which one: every session mixes both
+  vary_questions: true           # rotate which CpE / ECE technical questions are asked from session to session
   answer_time_limit_s: 120
+  start_on_face: false           # false = wait for "start" / tap; a face only makes the eyes follow
+  follow_ups: true               # one approved follow-up when the answer is short or a criterion is weak
+  follow_up_min_words: 15        # fewer words than this = "Could you tell me a bit more?"
+  follow_up_below: 3.0           # weakest criterion at or below this score = its approved follow-up
+  follow_up_wait_s: 8            # max wait for the preliminary score; if it is late, no follow-up is asked
+
+reply:   # replies to what the student said; in scripted mode the local AI only rephrases approved lines
+  topic_replies: true            # mention the student's topic (from the approved glossary) in replies
+  llm: true                      # local AI rephrases the chosen approved line (English sessions only)
+  llm_model: qwen2.5-0.5b-instruct-q4
+  llm_threads: 3
+  llm_ctx: 3072                  # prompt + memory + examples
+  llm_timeout_s: 6              # if the AI is slower than this, the approved line is used as-is
+  llm_max_words: 25
+  laughter: true                 # mirror the student's laughter once per session (never laughs first)
+  laughter_threshold: 0.30       # YAMNet "Laughter" probability needed (calibrate with real recordings)
+
+interviewer:   # generative interviewer (coach/session/generative.py); English sessions only
+  mode: generative               # generative = the local AI writes questions and replies | scripted = approved lines only
+  ask_name: true                 # ask and confirm the student's first name, then use it naturally
+  name_timeout_s: 12
+  name_every: 2                  # use the name at most every 2 robot turns (more sounds robotic)
+  callbacks: true                # connect a question to something the student said earlier
+  memory_llm: true               # the AI writes short facts from each answer (kept only if grounded)
+  knowledge: true                # look up the CpE/ECE knowledge library (samples/knowledge) for technical questions
+  kb_min_sim: 0.80
+  on_slot_min_sim: 0.8            # a written question this far from the rubric question is rejected (drift)
+  praise: true                   # specific praise, only for a criterion the scorer rated high
+  praise_min: 4.0
+  max_words: 40
+  question_timeout_s: 12          # if the next question is not written in time, the rubric question is asked
+  follow_up_timeout_s: 9
+  coach_summary: true            # AI-written coaching paragraph in the report (checked; template fallback)
+  coach_timeout_s: 20

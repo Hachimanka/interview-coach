@@ -48,7 +48,6 @@ COMMANDS: dict[str, list[tuple[str, str | None, bool]]] = {
                "hindi ako pumapayag", "hindi po ako pumapayag"),
     # Letters ("E E", "E C E", "C P E") sound alike, so the screen asks for the full word or a number.
     "CpE": _p(None, "computer engineering", "computer", "kompyuter", "cpe", "c p e"),
-    "EE": _p(None, "electrical engineering", "electrical", "elektrikal", "ee", "e e"),
     "ECE": _p(None, "electronics engineering", "electronics", "electronic", "elektroniks", "ece", "e c e"),
     "keep": _p("en", "keep it", "keep", "save it", "save") + _p("fil", "itago", "itago mo", "i save", "isave"),
     "delete": _p("en", "delete it", "delete", "dont keep it", "do not keep it", "dont save it")
@@ -71,7 +70,6 @@ HINTS: dict[str, dict[str, str]] = {
     "yes": {"en": "yes", "fil": "oo"},
     "no": {"en": "no", "fil": "hindi"},
     "CpE": {"en": "computer", "fil": "computer"},
-    "EE": {"en": "electrical", "fil": "electrical"},
     "ECE": {"en": "electronics", "fil": "electronics"},
     "keep": {"en": "keep it", "fil": "itago"},
     "delete": {"en": "delete it", "fil": "burahin"},
@@ -179,16 +177,24 @@ class VoiceListener:
                                    v.get("command_max_s", 6))
         self.no_speech_max = v.get("no_speech_prob_max", 0.6)
         self.logprob_min = v.get("avg_logprob_min", -1.2)
+        self.guard_blocks = int(cfg.audio.get("echo_guard_ms", 400) / 1000 * cfg.audio.sample_rate / 512)
+        self._skip = 0
+        self.prefer = "en"     # Whisper code of the session language; the session keeps it updated
 
     def open(self) -> None:
-        """Start listening now: drops what the mic heard before (the robot's own voice)."""
+        """Start listening now: drops what the mic heard before (the robot's own voice), and ignores
+        the next echo_guard_ms, while the speaker and the room are still sounding."""
         self.mic.clear()
         self.segmenter.reset()
+        self._skip = self.guard_blocks
 
     def poll(self, commands, numbered: bool = False, timeout: float = 0.1) -> Heard | None:
         """Read one mic block. Returns a Heard when an utterance just ended, else None."""
         block = self.mic.read(timeout=timeout)
         if block is None:
+            return None
+        if self._skip > 0:
+            self._skip -= 1
             return None
         if self.face:
             self.face.hear(block)
@@ -199,21 +205,22 @@ class VoiceListener:
         return None
 
     def recognize(self, audio, commands, numbered: bool = False) -> Heard | None:
-        """Transcribe with language auto-detect; if nothing matches, try the other language once.
-        No vocabulary prompt is used: a prompt full of command words makes Whisper invent them in noise."""
+        """Transcribe in the session language; if nothing matches, try the other language once.
+        No auto-detect (it costs a second encoder pass) and no vocabulary prompt (a prompt full of
+        command words makes Whisper invent them in noise)."""
         first = None
-        for lang in (None, "other"):
-            if lang == "other":
-                lang = "en" if first.language == "tl" else "tl"
+        for lang in (self.prefer, "tl" if self.prefer == "en" else "en"):
             t = self.asr.transcribe(audio, language=lang, prompt="")
+            # Speech decoded in the wrong language also looks like noise (low confidence), e.g.
+            # "Oo po" decoded as English: so try the other language before calling it noise.
             if t.no_speech_prob > self.no_speech_max or t.avg_logprob < self.logprob_min or not normalize(t.text):
-                if first is None:
-                    return None            # noise, not speech: say nothing, keep listening
                 continue
             first = first or t
             m = match(t.text, commands, numbered=numbered)
             if m:
                 return Heard(t.text, m.command, m.lang)
+        if first is None:
+            return None                    # noise in both languages: say nothing, keep listening
         return Heard(first.text)
 
 
@@ -270,7 +277,7 @@ def wait_choice(face, listener: VoiceListener | None, kind: str, options: list[t
                     cmd = aliases.get(heard.command, heard.command)
                     face.heard(heard.text, next(label for c, label in options if c == cmd))
                     if face.play_audio:
-                        time.sleep(0.7)        # let the student see which button was picked
+                        time.sleep(0.3)        # let the student see which button was picked
                     return Choice(cmd, heard.lang, "voice")
                 if heard:
                     misses += 1

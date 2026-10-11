@@ -1,0 +1,83 @@
+{
+  "status": "UNAPPROVED SAMPLE for development only. Faculty should approve these templates (T0.3).",
+  "note": "{topic} is filled ONLY with a canonical name from glossary.json. These templates are the approved meaning; the local AI may only rephrase them, and they are spoken as-is if the AI is slow or its text fails the checks. English only: Filipino sessions use the approved clips without a topic.",
+  "topic_ack": {
+    "en": "Thank you for sharing that about the {topic}."
+  },
+  "topic_follow_up": {
+    "hardware": {
+      "en": "You mentioned the {topic}. Why did you choose it for that work?"
+    },
+    "software": {
+      "en": "You mentioned {topic}. How did you use it in that work?"
+    },
+    "tool": {
+      "en": "You mentioned the {topic}. How did you use it?"
+    },
+    "concept": {
+      "en": "You mentioned {topic}. Could you explain how it worked in your project?"
+    },
+    "activity": {
+      "en": "You mentioned your {topic}. What was your own part in it?"
+    }
+  },
+  "feelings": {
+    "nervous": {
+      "en": [
+        "nervous",
+        "i am nervous",
+        "i'm nervous",
+        "anxious",
+        "scared",
+        "my mind went blank",
+        "mind went blank"
+      ],
+      "fil": [
+        "kinakabahan",
+        "kinabahan",
+        "kabado",
+        "natatakot",
+        "nablangko"
+      ]
+    },
+    "stuck": {
+      "en": [
+        "i don't know",
+        "i do not know",
+        "i'm not sure",
+        "i am not sure",
+        "i forgot",
+        "i can't remember"
+      ],
+      "fil": [
+        "hindi ko alam",
+        "hindi ko po alam",
+        "nakalimutan ko",
+        "di ko alam"
+      ]
+    }
+  },
+  "praise_note": "Generative mode: praise is spoken only when the scorer rated a criterion at or above interviewer.praise_min, and it names only that criterion, so it never contradicts the report. {name} is ', <first name>' or empty.",
+  "praise_templates": [
+    "That's a really good answer{name}. {what}",
+    "Thank you{name}, that was a strong answer. {what}",
+    "Very clear{name}. {what}"
+  ],
+  "praise": {
+    "relevance": "You connected your background clearly to this training.",
+    "clarity": "Your introduction was clear and well organized.",
+    "star": "You walked me through the situation, what you did, and the result.",
+    "ownership": "You were clear about what you personally did.",
+    "honesty": "You were honest about a real weakness.",
+    "improvement": "You described concrete steps you are taking to improve.",
+    "technical_depth": "You explained the technology you used and why you chose it.",
+    "role": "You were clear about your own role and the result.",
+    "method": "You described a clear step-by-step method.",
+    "tools": "You named the tools you use and how you use them.",
+    "techniques": "You named specific techniques to reduce the noise.",
+    "reasoning": "You explained why each technique works.",
+    "design_rules": "You covered the important design rules.",
+    "experience": "You connected it to a board you actually worked on.",
+    "default": "You gave a clear answer with real details."
+  }
+}

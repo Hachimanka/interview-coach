@@ -15,3 +15,4 @@ joblib
 pyserial           # ESP32 link
 websockets         # app -> face UI page
 scipy              # resampling (also a scikit-learn dependency)
+llama-cpp-python   # local AI that rephrases approved replies (CPU wheels: --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu)

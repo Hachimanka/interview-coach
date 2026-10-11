@@ -20,10 +20,10 @@ from coach.session.voice import Choice, Heard, match, strip_tail, wait_choice
     ("Hindi po ako pumapayag.", ["yes", "no"], "no", "fil"),
     ("I do not agree", ["yes", "no"], "no", "en"),
     ("Simulan na natin!", ["start"], "start", "fil"),
-    ("Electronics engineering", ["CpE", "EE", "ECE"], "ECE", None),
-    ("Electrical.", ["CpE", "EE", "ECE"], "EE", None),
-    ("Number two", ["CpE", "EE", "ECE"], "EE", None),
-    ("Isa po", ["CpE", "EE", "ECE"], "CpE", None),
+    ("Electronics engineering", ["CpE", "ECE"], "ECE", None),
+    ("Computer.", ["CpE", "ECE"], "CpE", None),
+    ("Number two", ["CpE", "ECE"], "ECE", None),
+    ("Isa po", ["CpE", "ECE"], "CpE", None),
     ("Burahin mo", ["keep", "delete"], "delete", "fil"),
 ])
 def test_choice_commands(said, options, command, lang):
@@ -35,7 +35,7 @@ def test_choice_commands(said, options, command, lang):
     ("yes no", ["yes", "no"]),                                   # two answers at once = unclear
     ("I know the answer", ["yes", "no"]),                        # "know" is not "no"
     ("well I was thinking about what you said before yes", ["yes", "no"]),   # chatter, not a command
-    ("Yes", ["CpE", "EE", "ECE"]),                               # only what is on screen counts
+    ("Yes", ["CpE", "ECE"]),                                     # only what is on screen counts
     ("", ["yes", "no"]),
 ])
 def test_unclear_speech_is_not_a_choice(said, options):
@@ -171,38 +171,46 @@ def _answer(lang, prob):
     return a
 
 
-def test_first_command_sets_the_language(cfg):
+def test_first_spoken_reply_decides_the_language_once(cfg):
     s = _session(cfg)
-    assert s.lang is None and s._l == "en"
-    s._lang_from_command("fil")
+    assert s.lang == "en"                 # initially English, never "both"
+    s._lang_from_command(None)            # neutral words ("okay", "computer") decide nothing
+    s._lang_from_command("fil")           # first reply "simulan" / "oo": Filipino
     assert s.lang == "fil"
-    s._lang_from_command("en")            # "yes" / "start" are also said by Filipino speakers
+    s._lang_from_command("en")            # later English words never switch it back
     assert s.lang == "fil"
     s2 = _session(cfg)
-    s2._lang_from_command("en")
+    s2._lang_from_command("en")           # first reply "start" / "yes": English, for good
+    s2._lang_from_command("fil")          # a later "tapos na po" or "oo" does not switch
     assert s2.lang == "en"
-    s2._lang_from_command("fil")          # "oo" / "simulan" always mean Filipino
-    assert s2.lang == "fil"
 
 
-def test_language_follows_each_answer_only_when_sure(cfg):
+def test_language_is_locked_when_the_interview_begins(cfg):
+    s = _session(cfg)                     # the student only tapped: nothing decided yet
+    s.meta = {}
+    s._lock_language()
+    s._lang_from_command("fil")           # e.g. "tapos na po" in the middle of an English interview
+    assert s.lang == "en" and s.meta["language"] == "en"
+    assert not hasattr(s, "_lang_from_answer")   # answers can no longer switch the language
+
+
+def test_operator_key_overrides(cfg):
     s = _session(cfg)
-    s._lang_from_answer(_answer("tl", 0.4))     # nothing known yet: take the best guess
-    assert s.lang == "fil"
-    s._lang_from_answer(_answer("en", 0.5))     # not sure enough to switch
-    assert s.lang == "fil"
-    s._lang_from_answer(_answer("en", 0.9))     # the student switched to English
-    assert s.lang == "en"
-    s._lang_from_answer(_answer("tl", 0.95))    # and back (Taglish follows the dominant language)
-    assert s.lang == "fil"
-
-
-def test_operator_key_locks_the_language(cfg):
-    s = _session(cfg)
+    s._lang_from_command("fil")
     s._set_lang("en", "operator")
-    s._lang_from_answer(_answer("tl", 0.99))
     s._lang_from_command("fil")
     assert s.lang == "en"
+
+
+def test_filipino_only_if_every_clip_exists(cfg):
+    class SomeFilipino:
+        def available(self, key, lang, text):
+            return lang == "en" or key != "line.ready"     # one Filipino clip missing
+
+    s = _session(cfg)
+    s.speech = SomeFilipino()
+    s._lang_from_command("fil")
+    assert s.lang == "en"                 # stays fully English instead of mixing
 
 
 def test_filipino_falls_back_to_english_when_clips_are_missing(cfg):
@@ -264,11 +272,10 @@ def test_whole_session_by_voice_no_touch(env, speak):
 
     cfg, models, server = env
     answers = [speak(a + " That's my answer.") for a in ANSWERS]
-    spoken = {"choice": speak("Start."), "consent": speak("Yes."), "program": speak("Electronics."),
-              "keep": speak("Keep it.")}
+    spoken = {"choice": speak("Start."), "consent": speak("Yes."), "keep": speak("Keep it.")}
     result = run_simulated(cfg, answers, server, models, spoken=spoken, wait=True, keep=True)
     meta = result["meta"]
-    assert meta["consented"] and not meta["ended_early"] and meta["program"] == "ECE" and meta["kept"]
+    assert meta["consented"] and not meta["ended_early"] and meta["program"] == "CpE & ECE" and meta["kept"]
     assert meta["final_language"] == "en" and meta["language"] == "en"
     assert len(result["answers"]) == 5
     # The simulation runs faster than real time, so an answer can hit the silence rule before the
@@ -292,7 +299,7 @@ def test_spoken_stop_ends_the_session(env, speak):
 
     cfg, models, server = env
     answers = [speak("I am a fourth year student. Stop the interview.")]
-    result = run_simulated(cfg, answers, server, models, spoken={"consent": speak("Yes."), "program": speak("Computer.")})
+    result = run_simulated(cfg, answers, server, models, spoken={"consent": speak("Yes.")})
     assert result["meta"]["ended_early"] and result["answers"] == []
 
 

@@ -31,6 +31,32 @@ vision:
     url: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
     size_mb: 4
 
+audio_events:   # MediaPipe audio classifier (YAMNet, 521 sound classes incl. "Laughter")
+  yamnet:
+    file: yamnet.tflite
+    url: "https://storage.googleapis.com/mediapipe-models/audio_classifier/yamnet/float32/latest/yamnet.tflite"
+    size_mb: 4
+
+llm:            # local chat model (llama.cpp, GGUF 4-bit): generative interviewer, or rephrases approved replies (scripted mode)
+  qwen2.5-1.5b-instruct-q4:
+    file: qwen2.5-1.5b-instruct-q4_k_m.gguf
+    url: "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    size_mb: 1100
+  qwen2.5-0.5b-instruct-q4:
+    file: qwen2.5-0.5b-instruct-q4_k_m.gguf
+    url: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+    size_mb: 400
+  # Fine-tuned on Colab with training/interviewer (G4). No URL: copy the .gguf into models/llm/, then set
+  # reply.llm_model to one of these. Use only after it beats the base model in eval/interviewer_eval.py.
+  interviewer-1.5b-q4:
+    file: interviewer-1.5b-q4_k_m.gguf
+    url: null
+    size_mb: 1100
+  interviewer-0.5b-q4:
+    file: interviewer-0.5b-q4_k_m.gguf
+    url: null
+    size_mb: 400
+
 scoring:
   multilingual-e5-small:
     repo: "intfloat/multilingual-e5-small"

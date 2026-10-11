@@ -7,9 +7,15 @@ import coach
 
 
 def test_coach_imports_without_torch():
-    for mod in pkgutil.walk_packages(coach.__path__, prefix="coach."):
-        importlib.import_module(mod.name)
-    assert "torch" not in sys.modules, "coach/ must not import torch (runs on Pi 5)"
+    """Checked in a fresh interpreter: other tests in this process may load the PC embedder (torch)."""
+    import subprocess
+
+    code = ("import importlib, pkgutil, sys, coach\n"
+            "for m in pkgutil.walk_packages(coach.__path__, prefix='coach.'):\n"
+            "    importlib.import_module(m.name)\n"
+            "sys.exit(1 if 'torch' in sys.modules else 0)\n")
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert r.returncode == 0, "coach/ must not import torch (runs on Pi 5)\n" + r.stderr[-2000:]
 
 
 def test_profiles_have_same_keys():

@@ -34,12 +34,8 @@
   .lite #bg::after { display: none; }
 
   /* Top bar */
-  #hud { display: flex; justify-content: space-between; align-items: center; gap: 2vw;
+  #hud { display: flex; justify-content: flex-end; align-items: center; gap: 2vw;
     padding: 2.2vh 2.6vw 0; min-height: 9vh; font-size: clamp(12px, 1.5vw, 19px); }
-  #brand { display: flex; align-items: center; gap: 1.1em; }
-  #brand svg { width: 2.4em; height: 2.4em; flex: none; }
-  #brand b { display: block; font-weight: 600; font-size: 1.12em; letter-spacing: .01em; }
-  #brand small { display: block; color: var(--muted); font-size: .8em; margin-top: .2em; letter-spacing: .02em; }
   #hud .right { display: flex; align-items: center; gap: .8em; font-variant-numeric: tabular-nums; }
   .chip { border: 1px solid var(--line); background: var(--glass); border-radius: 999px; padding: .5em 1.1em;
     color: var(--ink); white-space: nowrap; }
@@ -65,12 +61,25 @@
   .halo { opacity: .55; }
 
   /* Panels (touch) */
-  #panel { display: none; flex-direction: column; align-items: center; gap: 1.6vh; padding: 0 3vw 1.6vh; }
+  /* Choices: one compact row at the bottom, under the face (the face box never moves or shrinks).
+     Together with the subtitle it fits in the bottom 23vh, so it cannot cover the mouth. */
+  #panel { display: none; flex-wrap: wrap; align-items: center; justify-content: center; gap: .8vh 1.4vw;
+    padding: 0 3vw 1.2vh; }
   #panel.show { display: flex; animation: rise .35s cubic-bezier(.2, .9, .3, 1.2); }
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
-  #panel .title { font-size: clamp(15px, 2.2vw, 26px); color: var(--ink); text-align: center; }
+  #panel .title { font-size: clamp(13px, 1.5vw, 20px); color: var(--ink); text-align: center; }
   #panel .title:empty { display: none; }
-  #panel .row { display: flex; gap: 1.6vw; flex-wrap: wrap; justify-content: center; }
+  #panel .row { display: flex; gap: 1vw; flex-wrap: wrap; justify-content: center; }
+  #panel .btn { font-size: clamp(13px, 1.5vw, 20px); padding: .4em 1.1em; display: flex; align-items: center;
+    gap: .55em; box-shadow: 0 0 16px rgba(91, 140, 255, .35); }
+  #panel .btn.secondary { box-shadow: none; }
+  #panel .btn kbd { margin: 0; font-size: .7em; }
+  #panel .btn small { margin: 0; font-size: .72em; opacity: .8; }
+  /* While choices are shown the subtitle uses its compact size so both fit under the face. */
+  .has-panel #subs { padding-bottom: 2.4vh; }
+  .has-panel #subtext { font-size: clamp(13px, 1.6vw, 21px) !important; line-height: 1.3; }
+  .has-panel #card { padding-top: 1.2vh; padding-bottom: 1.2vh; }
+  .has-panel #wave { height: 1.8em; }
   .btn { font: inherit; font-weight: 600; font-size: clamp(17px, 2.6vw, 32px); padding: .5em 1.7em; border-radius: 999px;
     border: 1px solid rgba(170, 195, 255, .55); color: #061030; cursor: pointer;
     background: linear-gradient(180deg, #a9c4ff, #5b8cff); box-shadow: 0 0 26px rgba(91, 140, 255, .45);
@@ -128,13 +137,6 @@
 <div id="app" class="s-idle">
   <div id="bg"></div>
   <div id="hud">
-    <div id="brand">
-      <svg viewBox="0 0 40 40" aria-hidden="true">
-        <circle cx="20" cy="20" r="15" fill="none" stroke="#5b8cff" stroke-width="5"/>
-        <circle cx="20" cy="20" r="5" fill="#8fb4ff"/>
-      </svg>
-      <div><b>Interview Mode</b><small>Practice &nbsp;·&nbsp; Improve &nbsp;·&nbsp; Get Hired</small></div>
-    </div>
     <div class="right">
       <span class="chip" id="q"></span><span class="chip" id="timer"></span>
       <span class="chip" id="status"><i></i><span id="statustext">Ready</span></span>
@@ -238,6 +240,8 @@
     waiting:   { lid: 1,   squint: .12, browY: -10, browTilt: 4,  browSkew: 0, smile: .66, mouthW: 52, mouthX: 0,  tilt: 2.2,  pupil: 28, label: "Take your time" },
     thinking:  { lid: .8,  squint: 0,   browY: -4,  browTilt: 0,  browSkew: 9, smile: .12, mouthW: 30, mouthX: 12, tilt: 1.8,  pupil: 23, label: "Thinking" },
     closing:   { lid: 1,   squint: .46, browY: -10, browTilt: 4,  browSkew: 0, smile: 1,   mouthW: 60, mouthX: 0,  tilt: 0,    pupil: 28, label: "Finished" },
+    // Shown only when mirroring the student's laughter (the robot never laughs first).
+    amused:    { lid: 1,   squint: .72, browY: -13, browTilt: 5,  browSkew: 0, smile: 1,   mouthW: 66, mouthX: 0,  tilt: 3.2,  pupil: 27, label: "Smiling" },
   };
   let state = "idle", gaze = { x: 0, y: 0 }, present = false, online = true;
   function setState(s) {
@@ -245,14 +249,14 @@
     state = STATE[s] ? s : "idle";
     const { label, ...targets } = STATE[state];
     set(targets);
-    if (state !== "talking") set({ open: 0, wide: 0 });
+    if (state !== "talking" && state !== "amused") set({ open: 0, wide: 0 });
     app.className = app.className.replace(/s-\w+/, "s-" + state);
     showStatus();
     if (prev !== state && Math.random() < .6) blink();   // people blink when they shift attention
   }
   let hearing = "none";                                // a spoken choice is expected right now
   function showStatus() {
-    const choice = hearing !== "none" && hearing !== "answer";
+    const choice = hearing !== "none" && hearing !== "answer" && hearing !== "followup";
     app.classList.toggle("hearing", online && choice);
     $("statustext").textContent = !online ? "Connecting…" : choice ? "Say your choice" : STATE[state].label;
   }
@@ -393,8 +397,12 @@
         row.appendChild(b);
       });
       p.classList.add("show");
-      glance = { x: 0, y: .9, until: now() + .9 };     // the eyes glance at the buttons as they appear
-    } else p.classList.remove("show");
+      app.classList.add("has-panel");
+      glance = { x: 0, y: .9, until: now() + .9 };     // the eyes glance down at the buttons as they appear
+    } else {
+      p.classList.remove("show");
+      app.classList.remove("has-panel");
+    }
   }
   function subtitle(text, persist) {
     const s = $("subtext");
@@ -432,7 +440,7 @@
   function handle(m) {
     switch (m.type) {
       case "state": setState(m.state); break;
-      case "mouth": if (state === "talking") setMouth(m.level); break;
+      case "mouth": if (state === "talking" || state === "amused") setMouth(m.level); break;
       case "subtitle": subtitle(m.text, m.persist); break;
       case "gaze": gaze = { x: m.x, y: m.y }; present = !!m.present; break;
       case "level": P.level.t = +m.value || 0; lastLevelAt = now(); break;
@@ -485,13 +493,13 @@
     add("subtitle length", () => handle({ type: "subtitle", text: texts[ti++ % texts.length], persist: true }));
     const kinds = [["choice", ["Start"], "", ["“start” / “simulan”"]],
                    ["consent", ["Yes / Oo", "No / Hindi"], "Do you agree to continue? / Pumapayag ka ba?", ["“yes” / “oo”", "“no” / “hindi”"]],
-                   ["program", ["CpE", "EE", "ECE"], "Choose your program", ["“computer”", "“electrical”", "“electronics”"]],
+                   ["program", ["CpE", "ECE"], "Choose your program", ["“computer”", "“electronics”"]],
                    ["answer", [], "", ["“that's my answer”"]], ["none", [], "", []]];
     let k = 0, cur = kinds[4];
     add("panel", () => { cur = kinds[k++ % kinds.length]; const [kind, options, title, hints] = cur;
       handle({ type: "panel", kind, options, title, hints });
       handle({ type: "listen", kind }); });
-    add("heard ✓", () => handle({ type: "heard", text: cur[0] === "program" ? "Electronics." : "Oo po.", picked: cur[1][cur[0] === "program" ? 2 : 0] || null }));
+    add("heard ✓", () => handle({ type: "heard", text: cur[0] === "program" ? "Electronics." : "Oo po.", picked: cur[1][cur[0] === "program" ? 1 : 0] || null }));
     add("heard ?", () => handle({ type: "heard", text: "Uh, what?", picked: null }));
     add("follow mouse", b => { b.classList.toggle("on"); present = b.classList.contains("on"); });
     addEventListener("pointermove", e => { gaze = { x: e.clientX / innerWidth * 2 - 1, y: e.clientY / innerHeight * 2 - 1 }; });
@@ -508,7 +516,7 @@
     if (qp.get("mouth")) handle({ type: "mouth", level: +qp.get("mouth") });
     if (qp.get("sub")) handle({ type: "subtitle", text: qp.get("sub"), persist: qp.get("persist") === "1" });
     if (qp.get("panel")) handle({ type: "panel", kind: qp.get("panel"),
-      options: qp.get("panel") === "program" ? ["CpE", "EE", "ECE"] : [], title: qp.get("title") || "",
+      options: qp.get("panel") === "program" ? ["CpE", "ECE"] : [], title: qp.get("title") || "",
       hints: (qp.get("hints") || "").split("|").filter(Boolean) });
     if (qp.get("heard")) { handle({ type: "listen", kind: qp.get("panel") }); handle({ type: "heard", text: qp.get("heard"), picked: qp.get("picked") }); }
     handle({ type: "hud", timer: "01:12", q: "Q3 / 5" });

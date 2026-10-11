@@ -8,7 +8,9 @@ from coach.profile import load_profile, make_tts, models_dir
 
 @pytest.fixture(scope="session")
 def cfg():
-    return load_profile("pc")
+    c = load_profile("pc")
+    c["session"]["vary_questions"] = False   # fixed question order so session tests are repeatable
+    return c
 
 
 @pytest.fixture(scope="session")

@@ -37,5 +37,5 @@ def test_declining_consent_ends_without_answers(env):
 
 def test_stop_ends_session_early(env):
     cfg, models, answers, server = env
-    result = run_simulated(cfg, answers, server, models, stop_after_panels=1)  # stop at program choice
+    result = run_simulated(cfg, answers, server, models, stop_after_panels=0)  # stop at the consent screen
     assert result["meta"]["ended_early"] and result["answers"] == []

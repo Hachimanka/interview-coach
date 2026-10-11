@@ -51,6 +51,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--profile", default="pc")
     ap.add_argument("--all-asr", action="store_true", help="fetch tiny, base and small")
+    ap.add_argument("--all-llm", action="store_true", help="fetch both reply models (PC 1.5B and Pi 0.5B)")
     args = ap.parse_args()
 
     cfg = load_profile(args.profile)
@@ -69,9 +70,26 @@ def main() -> None:
         fetch(url, out / name)
 
     print("ASR")
-    sizes = list(reg["asr"]) if args.all_asr else [cfg.asr.model]
+    cmd_model = (cfg.get("voice") or {}).get("command_model")
+    sizes = list(reg["asr"]) if args.all_asr else list(dict.fromkeys([cfg.asr.model, cmd_model] if cmd_model else [cfg.asr.model]))
     for size in sizes:
         whisper(size, reg["asr"][size]["repo"], out)
+
+    print("Audio events (laughter)")
+    for entry in reg.get("audio_events", {}).values():
+        fetch(entry["url"], out / entry["file"])
+
+    reply = cfg.get("reply") or {}
+    if reply.get("llm"):
+        print("Local reply model (llama.cpp)")
+        names = list(reg["llm"]) if args.all_llm else [reply["llm_model"]]
+        for name in names:
+            entry = reg["llm"][name]
+            if not entry.get("url"):       # fine-tuned on Colab (training/interviewer): copy the file in yourself
+                state = "ok" if (out / "llm" / entry["file"]).exists() else "MISSING: copy it from Colab (G4)"
+                print(f"  {state}  {entry['file']}")
+                continue
+            fetch(entry["url"], out / "llm" / entry["file"])
 
     if cfg.scoring.backend == "sentence_transformers":
         print("Scoring embedder")

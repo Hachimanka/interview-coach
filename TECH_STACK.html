@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interview Coach Tech Stack</title>
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f5; --text:#17202b; --muted:#5a6676; --border:#d9dfe7;
+  --accent:#2f5bd3; --accent-soft:#e7edfc; --voice:#2f5bd3; --vision:#0f8a6a; --ml:#8a4fd1; --out:#c2620a;
+  --store:#5a6676; --warn:#9a6200; --warn-soft:#fbf1dd; --ok:#1f7a4a; --ok-soft:#e3f3ea;
+  --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151b; --surface:#1a2029; --surface-2:#222a35; --text:#e7ebf1; --muted:#9aa6b6; --border:#323c4a;
+    --accent:#8aa8ff; --accent-soft:#1f2a46; --voice:#8aa8ff; --vision:#4fd1a8; --ml:#c49bff; --out:#ffad5c;
+    --store:#9aa6b6; --warn:#f0bd5e; --warn-soft:#3a2c10; --ok:#6fd39c; --ok-soft:#173325;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#1a2029; --surface-2:#222a35; --text:#e7ebf1; --muted:#9aa6b6; --border:#323c4a;
+  --accent:#8aa8ff; --accent-soft:#1f2a46; --voice:#8aa8ff; --vision:#4fd1a8; --ml:#c49bff; --out:#ffad5c;
+  --store:#9aa6b6; --warn:#f0bd5e; --warn-soft:#3a2c10; --ok:#6fd39c; --ok-soft:#173325;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px 80px}
+header.hero{padding:40px 0 18px}
+.eyebrow{color:var(--muted);font-size:.85rem;letter-spacing:.04em;text-transform:uppercase;margin:0}
+h1{font-size:clamp(1.7rem,3.6vw,2.4rem);line-height:1.15;margin:.25em 0 .3em}
+.lede{color:var(--muted);max-width:72ch;margin:0}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.badge{font-size:.8rem;padding:3px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted)}
+.badge b{color:var(--text);font-weight:600}
+nav.toc{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);margin:0 -16px;padding:8px 16px;
+  display:flex;gap:6px;overflow-x:auto;white-space:nowrap;scrollbar-width:thin}
+nav.toc a{font-size:.85rem;text-decoration:none;color:var(--muted);padding:4px 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface)}
+nav.toc a:hover{color:var(--text);border-color:var(--accent)}
+section{padding-top:28px}
+h2{font-size:1.4rem;margin:0 0 .5em;padding-top:12px;border-top:1px solid var(--border)}
+h3{font-size:1.05rem;margin:1.2em 0 .3em}
+p,li{max-width:78ch}
+a{color:var(--accent)}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+pre{font-family:var(--mono);font-size:.85rem;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;line-height:1.5;margin:10px 0}
+pre code{background:none;padding:0}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.tbl{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{padding:8px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:0}
+th{background:var(--surface-2);font-weight:600;font-size:.85rem}
+td.v{font-family:var(--mono);font-size:.82rem;white-space:nowrap;color:var(--muted)}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;vertical-align:middle}
+.t-voice{color:var(--voice)} .t-vision{color:var(--vision)} .t-ml{color:var(--ml)} .t-out{color:var(--out)} .t-store{color:var(--store)}
+.callout{border-left:4px solid var(--warn);background:var(--warn-soft);padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0}
+.callout.ok{border-color:var(--ok);background:var(--ok-soft)}
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px;overflow-x:auto}
+.diagram svg{display:block;width:100%;min-width:820px;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted);margin:10px 4px 0}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:currentColor}
+.steps{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 0}
+.steps .s{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:5px 12px;font-size:.88rem}
+.steps .s.key{border-color:var(--accent);color:var(--accent);font-weight:600}
+.steps .arr{color:var(--muted)}
+ol.num{counter-reset:n;list-style:none;padding:0;margin:10px 0}
+ol.num li{counter-increment:n;position:relative;padding:8px 0 8px 44px;border-bottom:1px dashed var(--border)}
+ol.num li:last-child{border-bottom:0}
+ol.num li::before{content:counter(n);position:absolute;left:0;top:7px;width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  font-weight:700;display:grid;place-items:center;font-size:.9rem}
+.comp h3{margin-top:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.comp ul{padding-left:18px;margin:.4em 0}
+.comp .where{font-size:.82rem;color:var(--muted);margin-top:8px}
+.tree{font-family:var(--mono);font-size:.84rem;line-height:1.55;white-space:pre;overflow-x:auto}
+.tree .c{color:var(--muted)}
+footer{margin-top:48px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">BROwsers · Thesis 1 · Robotic Mock-Interview Coach</p>
+  <h1>Tech stack and architecture</h1>
+  <p class="lede">How the interview coach is built: every technology in the stack, how the ML works, how the PC is set up, and how Google Colab fits in for training. Everything runs <b>locally and offline</b> on a Windows PC (CPU only), with settings ready for the Raspberry Pi 5.</p>
+  <div class="badges">
+    <span class="badge"><b>Python</b> 3.11.9</span>
+    <span class="badge"><b>Stage 1</b> done: pretrained models only</span>
+    <span class="badge"><b>Offline</b> after setup</span>
+    <span class="badge"><b>Courses</b> CpE &amp; ECE</span>
+    <span class="badge"><b>Tests</b> 100+ passing</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="Sections">
+  <a href="#arch">Architecture</a><a href="#flow">Session flow</a><a href="#stack">Stack</a><a href="#parts">Components</a>
+  <a href="#scoring">Scoring</a><a href="#interviewer">AI interviewer</a><a href="#reply">Replies</a><a href="#threads">Threads</a><a href="#pi">PC vs Pi</a>
+  <a href="#folders">Folders</a><a href="#setup">Setup</a><a href="#colab">Colab</a><a href="#tests">Testing</a><a href="#todo">Not done</a>
+</nav>
+
+<!-- ======================================================== -->
+<section id="arch">
+<h2>1. Architecture</h2>
+<p class="muted">Data flows left to right: inputs → perception (pretrained models) → understanding (scoring, rules and the local AI interviewer) → the session → outputs. The bottom band is what's loaded at startup and what's prepared offline.</p>
+
+<div class="diagram" role="img" aria-label="Architecture diagram of the interview coach">
+<svg viewBox="0 0 1120 640" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/>
+    </marker>
+    <style>
+      .bx{fill:var(--surface);stroke:var(--border);stroke-width:1.2}
+      .lane{fill:var(--surface-2);opacity:.55}
+      .ttl{font-size:14px;font-weight:600;fill:var(--text)}
+      .sub{font-size:11.5px;fill:var(--muted)}
+      .col{font-size:11px;font-weight:700;letter-spacing:.08em;fill:var(--muted)}
+      .ln{stroke:var(--muted);stroke-width:1.5;fill:none}
+      .dash{stroke-dasharray:5 4}
+      .lbl{font-size:10.5px;fill:var(--muted)}
+      .bar-voice{fill:var(--voice)} .bar-vision{fill:var(--vision)} .bar-ml{fill:var(--ml)} .bar-out{fill:var(--out)} .bar-store{fill:var(--store)}
+    </style>
+  </defs>
+
+  <!-- column labels -->
+  <text class="col" x="24" y="24">INPUTS</text>
+  <text class="col" x="210" y="24">PERCEPTION · pretrained</text>
+  <text class="col" x="446" y="24">UNDERSTANDING</text>
+  <text class="col" x="692" y="24">SESSION</text>
+  <text class="col" x="940" y="24">OUTPUTS</text>
+
+  <!-- INPUTS -->
+  <rect class="bx" x="24" y="40" width="140" height="56" rx="10"/><rect class="bar-voice" x="24" y="40" width="5" height="56" rx="2"/>
+  <text class="ttl" x="40" y="64">Microphone</text><text class="sub" x="40" y="82">16 kHz mono</text>
+
+  <rect class="bx" x="24" y="304" width="140" height="56" rx="10"/><rect class="bar-vision" x="24" y="304" width="5" height="56" rx="2"/>
+  <text class="ttl" x="40" y="328">Camera</text><text class="sub" x="40" y="346">30 fps PC · 12 fps Pi</text>
+
+  <rect class="bx" x="24" y="392" width="140" height="56" rx="10"/><rect class="bar-store" x="24" y="392" width="5" height="56" rx="2"/>
+  <text class="ttl" x="40" y="416">Touch / keys</text><text class="sub" x="40" y="434">backup to voice</text>
+
+  <!-- PERCEPTION -->
+  <rect class="bx" x="210" y="40" width="190" height="56" rx="10"/><rect class="bar-voice" x="210" y="40" width="5" height="56" rx="2"/>
+  <text class="ttl" x="226" y="64">Silero VAD</text><text class="sub" x="226" y="82">speech segments, pauses</text>
+
+  <rect class="bx" x="210" y="128" width="190" height="56" rx="10"/><rect class="bar-voice" x="210" y="128" width="5" height="56" rx="2"/>
+  <text class="ttl" x="226" y="152">Whisper · answers</text><text class="sub" x="226" y="170">small (PC) / base int8 (Pi)</text>
+
+  <rect class="bx" x="210" y="216" width="190" height="56" rx="10"/><rect class="bar-voice" x="210" y="216" width="5" height="56" rx="2"/>
+  <text class="ttl" x="226" y="240">Whisper · commands</text><text class="sub" x="226" y="258">base int8, greedy, ~1 s</text>
+
+  <rect class="bx" x="210" y="304" width="190" height="56" rx="10"/><rect class="bar-vision" x="210" y="304" width="5" height="56" rx="2"/>
+  <text class="ttl" x="226" y="328">MediaPipe Landmarker</text><text class="sub" x="226" y="346">478 face points + head pose</text>
+
+  <!-- UNDERSTANDING -->
+  <rect class="bx" x="446" y="40" width="200" height="56" rx="10"/><rect class="bar-ml" x="446" y="40" width="5" height="56" rx="2"/>
+  <text class="ttl" x="462" y="64">Delivery rules</text><text class="sub" x="462" y="82">pace, pauses, fillers</text>
+
+  <rect class="bx" x="446" y="128" width="200" height="56" rx="10"/><rect class="bar-ml" x="446" y="128" width="5" height="56" rx="2"/>
+  <text class="ttl" x="462" y="152">Rubric scoring · e5</text><text class="sub" x="462" y="170">score, correction, follow-up</text>
+
+  <rect class="bx" x="446" y="216" width="200" height="56" rx="10"/><rect class="bar-ml" x="446" y="216" width="5" height="56" rx="2"/>
+  <text class="ttl" x="462" y="240">Voice commands</text><text class="sub" x="462" y="258">fuzzy phrase matching</text>
+
+  <rect class="bx" x="446" y="304" width="200" height="56" rx="10"/><rect class="bar-vision" x="446" y="304" width="5" height="56" rx="2"/>
+  <text class="ttl" x="462" y="328">Eye contact &amp; presence</text><text class="sub" x="462" y="346">yaw/pitch ±15°, iris center</text>
+
+  <rect class="bx" x="446" y="392" width="200" height="56" rx="10" style="stroke:var(--accent);stroke-width:1.6"/><rect class="bar-ml" x="446" y="392" width="5" height="56" rx="2"/>
+  <text class="ttl" x="462" y="416">Local AI interviewer</text><text class="sub" x="462" y="434">Qwen2.5 · memory · guard v2</text>
+  <path class="ln" d="M646,420 H690" marker-end="url(#ah)"/>
+  <text class="lbl" x="668" y="412" text-anchor="middle">writes</text>
+
+  <!-- SESSION -->
+  <rect class="bx" x="692" y="40" width="200" height="408" rx="12" style="stroke:var(--accent);stroke-width:1.6"/>
+  <text class="ttl" x="708" y="66">Session state machine</text>
+  <text class="sub" x="708" y="84">state_machine.py</text>
+  <g class="sub">
+    <text x="708" y="116">1 · wait for "start"</text>
+    <text x="708" y="140">2 · greeting</text>
+    <text x="708" y="164">3 · consent (yes / no)</text>
+    <text x="708" y="188">4 · language locked · name</text>
+    <text x="708" y="212">5 · question × 5 (AI-written)</text>
+    <text x="724" y="230">listen → ack / praise</text>
+    <text x="724" y="248">→ ≤ 1 follow-up</text>
+    <text x="708" y="272">6 · "processing results"</text>
+    <text x="708" y="296">7 · results ready</text>
+    <text x="708" y="320">8 · keep / delete report</text>
+  </g>
+  <line x1="708" y1="344" x2="876" y2="344" style="stroke:var(--border)"/>
+  <text class="sub" x="708" y="366">2 worker threads:</text>
+  <text class="sub" x="708" y="384">accurate · quick decisions</text>
+  <text class="sub" x="708" y="410">remembers the whole session</text>
+  <text class="sub" x="708" y="428">CpE + ECE slots mixed</text>
+
+  <!-- OUTPUTS -->
+  <rect class="bx" x="940" y="40" width="160" height="56" rx="10"/><rect class="bar-out" x="940" y="40" width="5" height="56" rx="2"/>
+  <text class="ttl" x="956" y="64">Speaker</text><text class="sub" x="956" y="82">Piper live / MMS clips</text>
+
+  <rect class="bx" x="940" y="128" width="160" height="56" rx="10"/><rect class="bar-out" x="940" y="128" width="5" height="56" rx="2"/>
+  <text class="ttl" x="956" y="152">Face page</text><text class="sub" x="956" y="170">SVG face · WebSocket</text>
+
+  <rect class="bx" x="940" y="216" width="160" height="56" rx="10"/><rect class="bar-out" x="940" y="216" width="5" height="56" rx="2"/>
+  <text class="ttl" x="956" y="240">Report</text><text class="sub" x="956" y="258">HTML + JSON</text>
+
+  <rect class="bx dash" x="940" y="304" width="160" height="56" rx="10" style="stroke:var(--muted)"/>
+  <text class="ttl" x="956" y="328">Robot arm</text><text class="sub" x="956" y="346">ESP32 · planned T4.5</text>
+
+  <!-- arrows: inputs -> perception -->
+  <path class="ln" d="M164,68 H208" marker-end="url(#ah)"/>
+  <path class="ln" d="M305,96 V126" marker-end="url(#ah)"/>
+  <path class="ln" d="M305,108 H192 V244 H208" marker-end="url(#ah)"/>
+  <text class="lbl" x="196" y="122" text-anchor="end">segments</text>
+  <path class="ln" d="M164,332 H208" marker-end="url(#ah)"/>
+  <path class="ln" d="M94,448 V462 H676 V440 H690" marker-end="url(#ah)"/>
+  <text class="lbl" x="380" y="476" text-anchor="middle">taps / Enter / Esc / 1–9 (via face page)</text>
+
+  <!-- perception -> understanding -->
+  <path class="ln" d="M400,58 H444" marker-end="url(#ah)"/>
+  <text class="lbl" x="422" y="52" text-anchor="middle">pauses</text>
+  <path class="ln" d="M400,146 H423 V82 H444" marker-end="url(#ah)"/>
+  <text class="lbl" x="427" y="120">words</text>
+  <path class="ln" d="M400,162 H444" marker-end="url(#ah)"/>
+  <path class="ln" d="M400,244 H444" marker-end="url(#ah)"/>
+  <path class="ln" d="M400,332 H444" marker-end="url(#ah)"/>
+
+  <!-- understanding -> session -->
+  <path class="ln" d="M646,68 H690" marker-end="url(#ah)"/>
+  <path class="ln" d="M646,156 H690" marker-end="url(#ah)"/>
+  <path class="ln" d="M646,244 H690" marker-end="url(#ah)"/>
+  <path class="ln" d="M646,332 H690" marker-end="url(#ah)"/>
+
+  <!-- session -> outputs -->
+  <path class="ln" d="M892,68 H938" marker-end="url(#ah)"/>
+  <path class="ln" d="M892,156 H938" marker-end="url(#ah)"/>
+  <path class="ln" d="M892,244 H938" marker-end="url(#ah)"/>
+  <path class="ln dash" d="M892,332 H938" marker-end="url(#ah)"/>
+
+  <!-- STORAGE / OFFLINE BAND -->
+  <rect class="lane" x="12" y="484" width="1096" height="144" rx="14"/>
+  <text class="col" x="24" y="508">LOADED AT STARTUP (profile.py) · PREPARED OFFLINE</text>
+
+  <rect class="bx" x="24" y="524" width="160" height="88" rx="10"/><rect class="bar-store" x="24" y="524" width="5" height="88" rx="2"/>
+  <text class="ttl" x="40" y="548">config/*.yaml</text><text class="sub" x="40" y="566">pc.yaml · pi5.yaml</text><text class="sub" x="40" y="584">models.yaml</text>
+
+  <rect class="bx" x="204" y="524" width="170" height="88" rx="10"/><rect class="bar-store" x="204" y="524" width="5" height="88" rx="2"/>
+  <text class="ttl" x="220" y="548">models/</text><text class="sub" x="220" y="566">~2.9 GB, not in git</text><text class="sub" x="220" y="584">Whisper · e5 · face · Qwen</text>
+
+  <rect class="bx" x="394" y="524" width="170" height="88" rx="10"/><rect class="bar-store" x="394" y="524" width="5" height="88" rx="2"/>
+  <text class="ttl" x="410" y="548">samples/</text><text class="sub" x="410" y="566">rubric · blueprint slots</text><text class="sub" x="410" y="584">CpE/ECE library · glossary</text>
+
+  <rect class="bx" x="584" y="524" width="170" height="88" rx="10"/><rect class="bar-store" x="584" y="524" width="5" height="88" rx="2"/>
+  <text class="ttl" x="600" y="548">cache/questions/</text><text class="sub" x="600" y="566">WAV + subtitles</text><text class="sub" x="600" y="584">+ lip-sync, EN &amp; FIL</text>
+
+  <rect class="bx" x="774" y="524" width="150" height="88" rx="10"/><rect class="bar-store" x="774" y="524" width="5" height="88" rx="2"/>
+  <text class="ttl" x="790" y="548">data/</text><text class="sub" x="790" y="566">reports, recordings</text><text class="sub" x="790" y="584">never uploaded</text>
+
+  <rect class="bx dash" x="944" y="524" width="156" height="88" rx="10" style="stroke:var(--muted)"/>
+  <text class="ttl" x="960" y="548">Google Colab</text><text class="sub" x="960" y="566">interviewer LoRA (G3/G4)</text><text class="sub" x="960" y="584">Whisper LoRA (T3.4)</text>
+
+  <!-- offline tool arrows -->
+  <path class="ln" d="M564,568 H582" marker-end="url(#ah)"/>
+  <text class="lbl" x="573" y="519" text-anchor="middle">synth_questions.py</text>
+  <!-- Colab results return into models/, routed under the boxes -->
+  <path class="ln dash" d="M1022,612 V622 H289 V614" marker-end="url(#ah)"/>
+  <text class="lbl" x="655" y="635" text-anchor="middle">fine-tuned models come back into models/ (GGUF for the interviewer)</text>
+  <!-- clips go up the right margin to the speaker -->
+  <path class="ln dash" d="M669,524 V470 H1112 V68 H1102" marker-end="url(#ah)"/>
+  <text class="lbl" x="890" y="464" text-anchor="middle">pre-made clips played by the speaker</text>
+</svg>
+</div>
+<div class="legend">
+  <span class="t-voice">Voice</span><span class="t-vision">Vision</span><span class="t-ml">Scoring &amp; rules</span><span class="t-out">Outputs</span><span class="t-store">Storage &amp; config</span>
+  <span>Dashed = planned / later</span>
+</div>
+</section>
+
+<!-- ======================================================== -->
+<section id="flow">
+<h2>2. One interview, step by step</h2>
+<div class="steps">
+  <span class="s">"start" / tap</span><span class="arr">→</span><span class="s">greeting</span><span class="arr">→</span>
+  <span class="s key">consent</span><span class="arr">→</span><span class="s">language locked</span><span class="arr">→</span><span class="s">first name (confirmed)</span><span class="arr">→</span>
+  <span class="s key">5 questions</span><span class="arr">→</span><span class="s">"processing your results"</span><span class="arr">→</span>
+  <span class="s">"results are ready"</span><span class="arr">→</span><span class="s">keep / delete report</span>
+</div>
+<p>Inside each question:</p>
+<div class="steps">
+  <span class="s">robot asks its own question (AI, checked)</span><span class="arr">→</span><span class="s key">student answers</span><span class="arr">→</span>
+  <span class="s">"that's my answer" / Done / 5 s silence</span><span class="arr">→</span><span class="s">acknowledgment / specific praise</span><span class="arr">→</span>
+  <span class="s">≤ 1 AI follow-up</span><span class="arr">→</span><span class="s">next question already written</span>
+</div>
+<div class="tbl"><table>
+<thead><tr><th>Timing rule</th><th>Value</th><th>Setting</th></tr></thead>
+<tbody>
+<tr><td>Answer ends after silence (once the student has spoken)</td><td>5 s</td><td><code>audio.end_of_answer_silence_s</code></td></tr>
+<tr><td>"Take your time" if the student hasn't started</td><td>5 s</td><td><code>audio.take_your_time_s</code></td></tr>
+<tr><td>Move on if the student never starts</td><td>15 s</td><td><code>audio.no_answer_timeout_s</code></td></tr>
+<tr><td>Mic ignored after the robot speaks (echo guard)</td><td>0.4 s</td><td><code>audio.echo_guard_ms</code></td></tr>
+<tr><td>Robot reacts to "yes" / "that's my answer"</td><td>~1.75–2.2 s (measured, PC)</td><td><code>voice.command_model</code></td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ======================================================== -->
+<section id="stack">
+<h2>3. Stack at a glance</h2>
+<p class="muted">Versions from <code>requirements-lock-pc.txt</code>.</p>
+<div class="tbl"><table>
+<thead><tr><th>Layer</th><th>Technology</th><th>Version</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>Language</td><td><b>Python</b></td><td class="v">3.11.9</td><td>Everything (same version as Raspberry Pi OS Bookworm)</td></tr>
+<tr><td><span class="tag t-voice">voice</span> Voice activity</td><td><b>Silero VAD</b> (ONNX) on <b>onnxruntime</b></td><td class="v">6.2.3 / 1.30.0</td><td>Is the student speaking? Splits speech, measures pauses</td></tr>
+<tr><td><span class="tag t-voice">voice</span> Speech-to-text</td><td><b>OpenAI Whisper</b> via <b>faster-whisper</b> (CTranslate2)</td><td class="v">1.2.1 / 4.8.2</td><td>Answers (accurate model) and commands (fast model)</td></tr>
+<tr><td><span class="tag t-out">out</span> Text-to-speech EN</td><td><b>Piper</b> <code>en_US-lessac-medium</code></td><td class="v">1.8.0</td><td>The robot's English voice</td></tr>
+<tr><td><span class="tag t-out">out</span> Text-to-speech FIL</td><td><b>Meta MMS-TTS Tagalog</b> (transformers + torch)</td><td class="v">5.18.0 / 2.14.1</td><td>Filipino clips, made in advance on the PC only</td></tr>
+<tr><td><span class="tag t-vision">vision</span> Face tracking</td><td><b>Google MediaPipe</b> Face Landmarker</td><td class="v">1.0.1</td><td>Presence, turn angle, head pose, eye contact</td></tr>
+<tr><td><span class="tag t-vision">vision</span> Camera</td><td><b>OpenCV</b></td><td class="v">5.0</td><td>Reads camera frames</td></tr>
+<tr><td><span class="tag t-ml">ml</span> Scoring</td><td><b>multilingual-e5-small</b> via <b>sentence-transformers</b></td><td class="v">6.1.0</td><td>Compares answers with the rubric's example answers</td></tr>
+<tr><td><span class="tag t-ml">ml</span> Interviewer (local AI)</td><td><b>Qwen2.5-Instruct</b> (GGUF 4-bit) via <b>llama.cpp</b></td><td class="v">0.3.36</td><td>Writes questions, follow-ups, memory facts and the coaching summary (1.5B PC, 0.5B Pi); scripted mode only rephrases approved replies</td></tr>
+<tr><td><span class="tag t-ml">ml</span> Knowledge library</td><td>~48 CpE/ECE passages, embedded with <b>multilingual-e5-small</b></td><td class="v">-</td><td>Keeps technical questions relevant (<code>samples/knowledge/</code>)</td></tr>
+<tr><td><span class="tag t-voice">voice</span> Laughter</td><td><b>YAMNet</b> via MediaPipe Audio Classifier</td><td class="v">1.0.1</td><td>Detects the student's laughter so the robot can mirror it once</td></tr>
+<tr><td><span class="tag t-ml">ml</span> Math / ML</td><td><b>NumPy</b>, <b>SciPy</b>, <b>scikit-learn</b></td><td class="v">2.4.6 / 1.17.1 / 1.9.1</td><td>Signal math, resampling, future classifiers</td></tr>
+<tr><td>Audio I/O</td><td><b>sounddevice</b>, <b>soundfile</b></td><td class="v">0.5.6 / 0.14.0</td><td>Mic input, speaker output, WAV files</td></tr>
+<tr><td><span class="tag t-out">out</span> Face UI</td><td><b>HTML + SVG + CSS + JavaScript</b>, no framework</td><td class="v">-</td><td>Animated face, subtitles, buttons (Chromium kiosk on the Pi)</td></tr>
+<tr><td>UI link</td><td><b>websockets</b> + Python <code>http.server</code></td><td class="v">17.2</td><td>Python app ↔ face page, live</td></tr>
+<tr><td><span class="tag t-store">config</span> Settings</td><td><b>YAML</b> (PyYAML)</td><td class="v">6.0.3</td><td><code>pc.yaml</code>, <code>pi5.yaml</code>, <code>models.yaml</code></td></tr>
+<tr><td>Robot arm (later)</td><td><b>pyserial</b> → ESP32 + PCA9685</td><td class="v">3.5</td><td>Turn and nod commands (T4.5)</td></tr>
+<tr><td>Testing</td><td><b>pytest</b></td><td class="v">9.1.1</td><td>100+ tests, including full simulated sessions</td></tr>
+<tr><td>Training (later)</td><td><b>PyTorch</b>, <b>transformers</b>, <b>peft</b>, <b>optimum</b> on <b>Google Colab</b></td><td class="v">-</td><td>Only what fails a checkpoint (Stage 3)</td></tr>
+<tr><td>Version control</td><td><b>Git</b> + <b>GitHub</b></td><td class="v">-</td><td>Code only; recordings and models never committed</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ======================================================== -->
+<section id="parts">
+<h2>4. Components, explained</h2>
+<div class="grid">
+
+  <div class="card comp">
+    <h3><span class="tag t-voice">voice in</span> Silero VAD</h3>
+    <p>A 2 MB neural network that answers "is this speech?" every 32 ms.</p>
+    <ul>
+      <li>Speech that stops for 0.6 s closes a <b>segment</b>, sent to Whisper while the student is still talking.</li>
+      <li>Mic ignored for 0.4 s after the robot speaks (its own echo).</li>
+      <li>Trailing silence is cut before Whisper, which otherwise invents words like "You".</li>
+      <li>Runs on onnxruntime directly: no PyTorch, light enough for the Pi.</li>
+    </ul>
+    <div class="where"><code>coach/audio/vad.py</code></div>
+  </div>
+
+  <div class="card comp">
+    <h3><span class="tag t-voice">voice in</span> Whisper, two models</h3>
+    <p>OpenAI's multilingual recognizer on <b>faster-whisper</b> (C++ engine, int8 support).</p>
+    <ul>
+      <li><b>Answers:</b> accurate (<code>small</code> PC / <code>base</code> int8 Pi), word timestamps for pace. A hint prompt ("Umm, uh…") keeps filler words in. English + Tagalog only.</li>
+      <li><b>Commands:</b> <code>base</code> int8, greedy, language given: about 1 s instead of about 7.5 s.</li>
+    </ul>
+    <div class="where"><code>coach/asr/faster_whisper_backend.py</code> · <code>make_command_asr()</code></div>
+  </div>
+
+  <div class="card comp">
+    <h3><span class="tag t-voice">voice in</span> Voice commands</h3>
+    <ul>
+      <li>"start / simulan", "yes / oo", "that's my answer / tapos na po", "stop the interview / itigil ang interview", "keep it / itago".</li>
+      <li><b>Fuzzy matching:</b> "top the interview" still counts as "stop the interview".</li>
+      <li>"That's my answer" only counts at the <b>end</b> of what was said.</li>
+      <li>Consent "yes" must be clear; consent is never assumed.</li>
+    </ul>
+    <div class="where"><code>coach/session/voice.py</code></div>
+  </div>
+
+  <div class="card comp">
+    <h3><span class="tag t-out">voice out</span> Piper + MMS-TTS</h3>
+    <ul>
+      <li>All robot lines and questions are made <b>in advance</b> into <code>cache/questions/</code>: a WAV plus JSON with <b>subtitle cues</b> (≤ 2 lines × 42 chars) and <b>lip-sync levels</b> (loudness every 30 ms → mouth 0–3).</li>
+      <li>Clips load in under 0.2 s; Piper speaks live English if needed.</li>
+      <li>0.35 s of silence after each clip so Windows doesn't cut the last word.</li>
+      <li>Known limit: MMS Tagalog mispronounces English technical words.</li>
+    </ul>
+    <div class="where"><code>offline/synth_questions.py</code> · <code>coach/tts/</code></div>
+  </div>
+
+  <div class="card comp">
+    <h3><span class="tag t-voice">language</span> English or Filipino</h3>
+    <ul>
+      <li>Starts in <b>English</b>.</li>
+      <li>The student's <b>first spoken reply</b> decides once ("simulan" / "oo" = Filipino).</li>
+      <li><b>Locked</b> for the whole interview; answers never switch it.</li>
+      <li>Filipino only if <b>every</b> Filipino clip exists, so it never mixes.</li>
+    </ul>
+    <div class="where"><code>Session._set_lang()</code> · staff override keys E / F</div>
+  </div>
+
+  <div class="card comp">
+    <h3><span class="tag t-vision">vision</span> MediaPipe Face Landmarker</h3>
+    <ul>
+      <li>478 face points (irises included) + 3D head rotation, in <b>one pass</b> per frame.</li>
+      <li><b>Presence</b>, <b>turn angle</b> (eyes and arm), <b>eye contact</b> = yaw and pitch within ±15° and irises centered.</li>
+      <li>Eye-contact % per answer goes into the report.</li>
+    </ul>
+    <div class="where"><code>coach/vision/face.py</code> · <code>gaze.py</code> · <code>loop.py</code></div>
+  </div>
+
+  <div class="card comp">
+    <h3><span class="tag t-ml">rules</span> Delivery</h3>
+    <ul>
+      <li><b>Pace:</b> words per minute from Whisper timings.</li>
+      <li><b>Long pauses:</b> gaps ≥ 3 s between segments. <b>Response delay</b> before starting.</li>
+      <li><b>Fillers:</b> um / uh / hmm always; ano / parang / like only next to a pause or repeated.</li>
+      <li>Each measure becomes a plain-language tip when out of range.</li>
+    </ul>
+    <div class="where"><code>coach/delivery/</code></div>
+  </div>
+
+  <div class="card comp">
+    <h3><span class="tag t-out">output</span> Face page + report</h3>
+    <ul>
+      <li>SVG face with 7 expressions (none negative), eyes that follow, lip-sync, subtitles, small choice buttons under the face.</li>
+      <li>Live updates from Python over a WebSocket; Chromium kiosk on the Pi.</li>
+      <li>Report: printable <code>report.html</code> + <code>report.json</code>, saved only if the student keeps it.</li>
+    </ul>
+    <div class="where"><code>coach/face/</code> · <code>coach/session/report.py</code></div>
+  </div>
+
+</div>
+</section>
+
+<!-- ======================================================== -->
+<section id="scoring">
+<h2>5. How an answer gets its rubric score</h2>
+<p class="muted">Scoring v0: pretrained embeddings, no training (<code>coach/scoring/score.py</code>).</p>
+<ol class="num">
+  <li>Each rubric criterion has faculty <b>example answers</b> at levels 5, 3 and 1.</li>
+  <li>The answer and every example become <b>embedding vectors</b> (multilingual-e5-small): numbers that capture meaning, so a Taglish answer can be compared with English examples.</li>
+  <li><b>Cosine similarity</b> measures how close the answer is to each level's examples.</li>
+  <li>A <b>softmax</b> over the levels (temperature 0.02) gives a score from 1 to 5.</li>
+  <li>The report stores <b>which criterion and which example answer</b> produced the score: the proposal's "traceable to an approved criterion".</li>
+  <li>The correction tip is the faculty-written tip of the <b>lowest-scoring criterion</b>.</li>
+</ol>
+<div class="callout ok"><b>Next: scoring v1 (T3.1).</b> A small ordinal classifier trained on the same features (<code>coach/scoring/features.py</code>) against real faculty ratings, target κ ≥ 0.60. It runs on the PC CPU, so no Colab is needed.</div>
+</section>
+
+<!-- ======================================================== -->
+<section id="interviewer">
+<h2>5b. The generative interviewer</h2>
+<p>In English sessions (<code>interviewer.mode: generative</code>, the default) the robot talks like a real interviewer with CpE/ECE knowledge instead of reading fixed questions. It runs locally on llama.cpp; nothing goes online.</p>
+<div class="grid">
+  <div class="card comp"><h3><span class="tag t-store">slots</span> Competency blueprint</h3><p><code>samples/blueprint.json</code>: one slot per rubric question says <b>what</b> the question must find out. The AI picks the wording; the answer is scored with that slot's rubric, so scoring stays valid and traceable.</p></div>
+  <div class="card comp"><h3><span class="tag t-ml">memory</span> Session memory</h3><p>The student's <b>first name</b> (asked and confirmed after consent), topics, feelings and short facts from every answer. AI facts are kept only if the student really said those words. RAM only, cleared at the end.</p></div>
+  <div class="card comp"><h3><span class="tag t-ml">knowledge</span> CpE/ECE library</h3><p>~48 short passages (microcontrollers, buses, circuits, signals, PCB…). The closest one keeps a technical question relevant. Unapproved sample: faculty review it (G0).</p></div>
+  <div class="card comp"><h3><span class="tag t-ml">guard</span> Guard v2</h3><p>Rejects judging, "we / our", private topics, invented names, numbers or technical terms, and false "you mentioned…" claims. A rejected or late sentence is replaced by the approved line.</p></div>
+</div>
+<div class="steps">
+  <span class="s">answer ends</span><span class="arr">→</span><span class="s">"I see." / praise if a criterion ≥ 4</span><span class="arr">→</span>
+  <span class="s">≤ 1 AI follow-up</span><span class="arr">→</span><span class="s key">next question written while the student answers</span><span class="arr">→</span>
+  <span class="s">guard check</span><span class="arr">→</span><span class="s">ask it (or the rubric question)</span>
+</div>
+<div class="tbl"><table>
+<thead><tr><th>Model (<code>python -m eval.interviewer_eval</code>)</th><th>Questions passing the guard</th><th>Follow-ups passing</th><th>Thinking time p50 / p90</th></tr></thead>
+<tbody>
+<tr><td>Qwen2.5-1.5B (PC)</td><td>90%</td><td>85%</td><td>2.9 s / 4.5 s</td></tr>
+<tr><td>Qwen2.5-0.5B (Pi)</td><td>25%</td><td>60%</td><td>2.0 s / 3.1 s</td></tr>
+</tbody></table></div>
+<div class="callout"><b>Example from a full simulated interview (1.5B):</b> "Leonard, for your capstone project, you built an attendance system with an ESP32. Did you face any disagreement while working on it, and what did you do to resolve it?" The rest falls back to approved lines, so the interview never breaks. The 0.5B model often talks as if it were the student; the Colab fine-tuning (G3/G4, section 11) is meant to fix that before the Pi uses it.</div>
+</section>
+
+<!-- ======================================================== -->
+<section id="reply">
+<h2>6. The robot's reply to what the student said</h2>
+<p>The <b>meaning</b> of every reply comes from an approved line; in English sessions a <b>local AI</b> (Qwen2.5 on llama.cpp) rephrases it to refer to the student's words, as the proposal allows ("may rephrase or follow up only from approved items").</p>
+<div class="steps">
+  <span class="s">laughed? → "Haha!" + amused face (once)</span><span class="arr">/</span><span class="s">else "I see."</span><span class="arr">→</span>
+  <span class="s">topics · feelings · rough score</span><span class="arr">→</span><span class="s key">choose 1 approved reply</span><span class="arr">→</span>
+  <span class="s key">AI rephrases (English)</span><span class="arr">→</span><span class="s">guard check</span><span class="arr">→</span><span class="s">speak (or approved line)</span>
+</div>
+<div class="tbl"><table>
+<thead><tr><th>Student said</th><th>Approved meaning</th><th>Robot said (AI, checked)</th></tr></thead>
+<tbody>
+<tr><td>"We made a water monitor with Arduino and some sensors."</td><td>You mentioned the Arduino. Why did you choose it for that work?</td><td>"You mentioned using an Arduino for a water monitor. Why did you select it for that project?"</td></tr>
+<tr><td>"Sorry, I am a bit nervous. In a group project we disagreed…"</td><td>(reassurance) + You mentioned your group project. What was your own part in it?</td><td>"That's okay…" + "You said your group project involved disagreement. What part did you play in it?"</td></tr>
+<tr><td>"I would add a filter and maybe average the readings." (short)</td><td>Could you tell me a bit more?</td><td>"Could you explain more about adding a filter and averaging readings in your code?"</td></tr>
+<tr><td>Strong answer, no topic</td><td>(none)</td><td>"I see." then the next question</td></tr>
+</tbody></table></div>
+<div class="callout"><b>Guardrails (<code>guard.py</code>):</b> the AI's reply is rejected if it judges ("great", "wrong"…), drops the approved question, adds numbers or new facts, drops the topic, or speaks as the student ("our project"). A rejected or late (&gt; 5 s) reply is replaced by the approved line. Topics come only from the approved glossary, so "ESB 32" is spoken as "ESP32". Filipino sessions use approved clips only. The report records every reply, its source and why it was chosen.</div>
+</section>
+
+<!-- ======================================================== -->
+<section id="threads">
+<h2>7. What runs at the same time</h2>
+<div class="grid">
+  <div class="card"><b>Main thread</b><p class="muted" style="margin:.3em 0 0">Interview flow, mic reading, VAD, timing rules, robot speech playback.</p></div>
+  <div class="card"><b>Worker: accurate</b><p class="muted" style="margin:.3em 0 0">Whisper (answer model) per segment, then the real score + delivery per answer, in order.</p></div>
+  <div class="card"><b>Worker: quick</b><p class="muted" style="margin:.3em 0 0">Decisions the student waits for: "that's my answer" / "stop" checks and the follow-up choice, on the fast model. Never waits behind slow work.</p></div>
+  <div class="card"><b>Vision thread</b><p class="muted" style="margin:.3em 0 0">Camera frames → MediaPipe → presence, gaze, eye contact (capped at the profile's fps).</p></div>
+  <div class="card"><b>Face server threads</b><p class="muted" style="margin:.3em 0 0">HTTP for the page + WebSocket for live state; the last state is replayed if the page reloads.</p></div>
+</div>
+</section>
+
+<!-- ======================================================== -->
+<section id="pi">
+<h2>8. One code base, two machines</h2>
+<p>Moving from the PC to the Pi is a <b>settings change</b>, not a rewrite.</p>
+<div class="tbl"><table>
+<thead><tr><th>Setting</th><th><code>config/pc.yaml</code></th><th><code>config/pi5.yaml</code></th></tr></thead>
+<tbody>
+<tr><td>Answer Whisper</td><td>small, float32, beam 5</td><td>base, int8, beam 1, 2 threads</td></tr>
+<tr><td>Command Whisper</td><td>base, int8</td><td>base, int8</td></tr>
+<tr><td>Camera</td><td>1280×720 @ 30 fps</td><td>640×480 @ 12 fps</td></tr>
+<tr><td>Scoring engine</td><td>sentence-transformers (PyTorch)</td><td>ONNX int8, no PyTorch (needs the T4.2 export)</td></tr>
+<tr><td>Robot speech</td><td>live + clips</td><td>clips + live Piper for AI-written lines</td></tr>
+<tr><td>Face page</td><td>60 fps, glow effects</td><td>24 fps, no effects</td></tr>
+<tr><td>Local AI</td><td>Qwen2.5-1.5B Q4, 6 threads</td><td>Qwen2.5-0.5B Q4, 3 threads (fine-tuned version planned, G4)</td></tr>
+</tbody></table></div>
+<div class="callout"><b>Rule:</b> the runtime package <code>coach/</code> never imports PyTorch, so it can run on the Pi. A test checks this in a fresh Python process. PyTorch lives only in <code>training/</code>, <code>offline/</code> and the PC scoring backend.</div>
+</section>
+
+<!-- ======================================================== -->
+<section id="folders">
+<h2>9. Folder structure</h2>
+<div class="card tree">interview-coach/
+├── coach/                 <span class="c">runtime package (PC + Pi, no torch imports)</span>
+│   ├── audio/             <span class="c">mic capture, Silero VAD, resampling</span>
+│   ├── asr/               <span class="c">Whisper backends (faster-whisper; whisper.cpp planned)</span>
+│   ├── tts/               <span class="c">Piper backend, clip cache with subtitles + lip-sync</span>
+│   ├── vision/            <span class="c">MediaPipe face tracking, eye contact, camera thread</span>
+│   ├── delivery/          <span class="c">pace, pauses, filler words, tips</span>
+│   ├── scoring/           <span class="c">rubric loader, embedders, scorer, corrections</span>
+│   ├── interviewer/       <span class="c">generative interviewer: prompts, memory, knowledge, guard v2</span>
+│   ├── reply/             <span class="c">topics, feelings, laughter, rephraser, shared local AI</span>
+│   ├── face/              <span class="c">face page (ui/), WebSocket server, expressions, lip-sync</span>
+│   ├── session/           <span class="c">interview flow, voice commands, lines, report, run.py</span>
+│   ├── robot/             <span class="c">ESP32 serial bridge (planned, T4.5)</span>
+│   └── profile.py         <span class="c">loads pc / pi5 settings, builds every model</span>
+├── config/                <span class="c">pc.yaml, pi5.yaml, models.yaml</span>
+├── samples/               <span class="c">UNAPPROVED samples: rubric/, blueprint.json, knowledge/, glossary, replies</span>
+├── offline/               <span class="c">download_models.py, synth_questions.py</span>
+├── training/              <span class="c">interviewer/ = synthetic data + LoRA (G3/G4); other Stage 3 scripts later</span>
+├── eval/                  <span class="c">simulated student, interviewer_eval.py, benchmarks</span>
+├── tests/                 <span class="c">pytest suite</span>
+├── models/                <span class="c">~2.9 GB downloaded models incl. local AI (NOT in git)</span>
+├── cache/                 <span class="c">generated speech clips (NOT in git)</span>
+├── data/                  <span class="c">recordings, ratings, reports (NOT in git, never uploaded)</span>
+├── TECH_STACK.md / .html  <span class="c">this document</span>
+└── requirements-*.txt     <span class="c">common / pc / pi / train / lock-pc</span></div>
+</section>
+
+<!-- ======================================================== -->
+<section id="setup">
+<h2>10. How the PC was set up</h2>
+<pre><code># 1. Python 3.11 (Raspberry Pi OS Bookworm uses 3.11 too)
+winget install Python.Python.3.11
+
+# 2. Project environment
+cd "C:\Users\Laizame Forrosuelo\RoboticArm\interview-coach"
+py -3.11 -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements-lock-pc.txt     # exact versions (or requirements-pc.txt for latest)
+
+# 3. Models, about 2.9 GB with both local AI models, once
+python -m offline.download_models --profile pc --all-asr --all-llm
+
+# 4. Robot speech clips, again after any change to questions or robot lines
+python -m offline.synth_questions
+
+# 5. Check and run
+pytest
+python -m coach.session.run</code></pre>
+<div class="tbl"><table>
+<thead><tr><th>Requirements file</th><th>For</th><th>Contains</th></tr></thead>
+<tbody>
+<tr><td><code>requirements-common.txt</code></td><td>PC + Pi</td><td>Runtime packages, no PyTorch</td></tr>
+<tr><td><code>requirements-pc.txt</code></td><td>PC</td><td>common + sentence-transformers (PyTorch) + pytest</td></tr>
+<tr><td><code>requirements-pi.txt</code></td><td>Pi 5</td><td>common only</td></tr>
+<tr><td><code>requirements-train.txt</code></td><td>PC / Colab</td><td>pc + torch, transformers, peft, datasets, optimum, jiwer, pandas</td></tr>
+<tr><td><code>requirements-lock-pc.txt</code></td><td>PC</td><td>Exact versions known to work</td></tr>
+</tbody></table></div>
+<p class="muted"><b>Offline:</b> <code>run.py</code> sets <code>HF_HUB_OFFLINE=1</code>, so models load only from <code>models/</code> and the app never contacts the internet. MediaPipe's startup log noise is silenced in <code>coach/vision/face.py</code>.</p>
+</section>
+
+<!-- ======================================================== -->
+<section id="colab">
+<h2>11. Training on Google Colab</h2>
+<p>The PC has <b>no NVIDIA GPU</b>. Most planned training is small and runs fine on the PC CPU; Colab (a free GPU in the browser) is only for the heavy job.</p>
+<div class="tbl"><table>
+<thead><tr><th>Task</th><th>What</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>T3.1 Scoring v1</td><td>Small ordinal classifier on embedding features</td><td><b>PC</b> (seconds to minutes)</td></tr>
+<tr><td>T3.2 Eye-contact classifier</td><td>Tiny model on face-landmark numbers</td><td><b>PC</b></td></tr>
+<tr><td>T3.3 Filler classifier</td><td>Small audio / text classifier</td><td><b>PC</b></td></tr>
+<tr><td>T3.4 Whisper fine-tune (LoRA)</td><td>Adapts Whisper to Filipino / Cebuano-accented English</td><td><b>Colab GPU</b> (hours on CPU)</td></tr>
+<tr><td>T4.2 Model export</td><td>Embedder → ONNX int8, Whisper → CTranslate2 int8</td><td>PC or Colab</td></tr>
+<tr><td>G3 Interviewer data</td><td>A large open teacher (Qwen2.5-14B) role-plays students and the interviewer; only guard-passing turns kept</td><td><b>Colab GPU</b></td></tr>
+<tr><td>G4 Interviewer fine-tune</td><td>LoRA on Qwen2.5-1.5B / 0.5B → GGUF Q4 for llama.cpp</td><td><b>Colab GPU</b> (free T4)</td></tr>
+</tbody></table></div>
+<p class="muted">The interviewer scripts (<code>training/interviewer/</code>) are ready. The other scripts in <code>training/</code> are still placeholders (T3.x); they get written once Stage 2 shows what needs training.</p>
+
+<div class="callout"><b>⚠ Privacy before you upload anything.</b> Colab runs on Google's servers. The proposal promises recordings <b>stay on the device</b>, and student voices and faces are personal data under the <b>Data Privacy Act (RA 10173)</b>.
+<ul style="margin:.5em 0 0;padding-left:18px">
+<li><b>Fine on Colab:</b> public datasets (Google FLEURS, Mozilla Common Voice Filipino), code, model files.</li>
+<li><b>Student recordings:</b> only if the signed consent form (T0.2) and your adviser / ethics committee allow cloud processing. Otherwise train on public data on Colab and do anything with student audio on the PC.</li>
+<li>Never upload names; use anonymous codes.</li>
+</ul></div>
+
+<h3>Colab steps (for T3.4, once the script exists)</h3>
+<ol class="num">
+  <li>Open <a href="https://colab.research.google.com">colab.research.google.com</a> → <b>New notebook</b>.</li>
+  <li><b>Runtime → Change runtime type → T4 GPU</b>.</li>
+  <li>Add your GitHub token under <b>Secrets</b> (key icon) as <code>GH_TOKEN</code>, since the repository is private.</li>
+  <li>Run the cells below, then download the exported folder from Drive into <code>models/whisper/</code> on the PC and point <code>asr.model</code> at it.</li>
+</ol>
+<pre><code># Cell 1: get the code
+from google.colab import userdata
+token = userdata.get("GH_TOKEN")
+!git clone https://{token}@github.com/&lt;your-username&gt;/interview-coach.git
+%cd interview-coach
+
+# Cell 2: install training packages (Colab already has torch with GPU support)
+!pip install -q -r requirements-train.txt
+
+# Cell 3: models (same downloader as the PC)
+!python -m offline.download_models --profile pc --all-asr
+
+# Cell 4: save results to Google Drive so they survive the session
+from google.colab import drive
+drive.mount("/content/drive")
+
+# Cell 5: train and export (T3.4 / T4.2, scripts to be written)
+!python -m training.whisper_lora --out /content/drive/MyDrive/interview-coach/whisper_ft
+!python -m training.export.export_whisper_ct2 --src /content/drive/MyDrive/interview-coach/whisper_ft \
+        --out /content/drive/MyDrive/interview-coach/whisper_ft_int8</code></pre>
+<h3>Colab steps for the interviewer (G3 → G4), ready now</h3>
+<p>Synthetic data only: no student recordings or names are uploaded.</p>
+<pre><code>!pip install -q -r requirements-train.txt
+# G3: ~600 made-up interviews; only turns that pass the robot's own guard are kept
+!python -m training.interviewer.make_synthetic --dialogues 600 --out /content/drive/MyDrive/ic/interviewer.jsonl
+# (faculty read a random sample before training)
+# G4: LoRA fine-tune, then GGUF Q4_K_M (commands at the top of finetune_lora.py)
+!python -m training.interviewer.finetune_lora --base Qwen/Qwen2.5-1.5B-Instruct \
+        --data /content/drive/MyDrive/ic/interviewer.jsonl --out /content/drive/MyDrive/ic/interviewer-1.5b</code></pre>
+<p>Copy <code>interviewer-1.5b-q4_k_m.gguf</code> to <code>models/llm/</code>, run <code>python -m eval.interviewer_eval --model interviewer-1.5b-q4</code>, and set <code>reply.llm_model: interviewer-1.5b-q4</code> only if it beats the base model. Repeat with the 0.5B base for the Pi.</p>
+<ul class="muted">
+  <li>Free sessions disconnect after a few hours; save checkpoints to Drive.</li>
+  <li>Colab's Python version can differ from 3.11; use <code>requirements-train.txt</code>, not the PC lock file.</li>
+  <li>Colab can't use your mic, camera or face page: it's for training only, not for running the robot.</li>
+</ul>
+</section>
+
+<!-- ======================================================== -->
+<section id="tests">
+<h2>12. Testing</h2>
+<ul>
+  <li><code>pytest</code> runs 100+ tests: each module with known test audio (Piper speaks sentences with known words), the face server, scoring order (good &gt; mid &gt; poor), full simulated interviews (tapped and spoken), language locking, timing rules, follow-ups, the generative interviewer (names, memory, guard v2, AI questions with fallback, praise, coaching, and a full simulated interview with the real model), and the "no PyTorch in <code>coach/</code>" check.</li>
+  <li><code>python -m eval.simulate_session --sessions 3</code> runs gate G1 with a simulated student (<code>--generative</code> for the AI interviewer).</li>
+  <li><code>python -m eval.interviewer_eval</code> measures the AI interviewer: guard pass rate, personalization, latency.</li>
+  <li>Model-dependent tests skip themselves if <code>models/</code> is empty.</li>
+</ul>
+</section>
+
+<!-- ======================================================== -->
+<section id="todo">
+<h2>13. Not done yet (PC side)</h2>
+<div class="tbl"><table>
+<thead><tr><th>Stage</th><th>What</th><th>Needs</th></tr></thead>
+<tbody>
+<tr><td>S0 (team)</td><td>Consent form, faculty rubric (replaces the sample), mic array + camera, pilot recordings, human ratings, typed transcripts</td><td>Adviser, faculty, students</td></tr>
+<tr><td>S2</td><td>Measure word error rate, scoring agreement (κ ≥ 0.60), eye-contact and filler accuracy on real data</td><td>S0 data</td></tr>
+<tr><td>S3</td><td>Train only what fails (scoring v1 almost certainly)</td><td>S2 results</td></tr>
+<tr><td>T4.5</td><td>ESP32 robot-arm bridge</td><td>ESP32 + servos</td></tr>
+<tr><td>G0, G3, G4, G7</td><td>Faculty approve slots, knowledge passages and praise lines; run the Colab fine-tune; human-likeness ratings on recorded sessions; off-topic steering; live Filipino voice (MMS → ONNX)</td><td>Faculty, Colab, pilot sessions</td></tr>
+</tbody></table></div>
+<p class="muted">Full plan and task tracker: <code>~/Downloads/Interview-Coach-ML-Plan.html</code>. Text version of this page: <a href="TECH_STACK.md">TECH_STACK.md</a>.</p>
+</section>
+
+<footer>Robotic Mock-Interview Coach · BROwsers · generated from TECH_STACK.md</footer>
+</div>
+</body>
+</html>

@@ -74,12 +74,17 @@ table{{border-collapse:collapse;width:100%;font-size:.92rem}} td,th{{border:1px 
 details{{margin-top:6px}} @media print{{details{{display:none}}}}
 </style></head><body>
 <p class="muted">Practice interview report · {e(m.get('started', ''))} · {e(m.get('program', ''))}</p>
-<h1>Your practice interview</h1>
+<h1>{('Your practice interview, ' + e(m['student_name'])) if m.get('student_name') else 'Your practice interview'}</h1>
 <p class="muted">This is a rehearsal tool. It does not grade, rank or certify you, and no one else receives this report.</p>"""]
     if m.get("sample_rubric"):
         parts.append('<p class="sample">Scored with the <b>unapproved sample rubric</b> (development only).</p>')
     if m.get("ended_early"):
         parts.append('<p class="muted">You ended this session early. Only completed answers are shown.</p>')
+    cs = m.get("coach_summary")
+    if cs:
+        parts.append(f'<div class="card"><b>Your coach says</b><p>{e(cs["text"])}</p>'
+                     f'<p class="muted">Written {"by the local AI from your scores and checked" if cs.get("source") == "ai" else "from your scores"}: '
+                     f'strongest area {e(cs.get("strength") or "-")}.</p></div>')
     if "average_score" in s:
         parts.append(f"""<div class="card"><b>Average rubric score: {s['average_score']} / 5</b>{_bar(s['average_score'])}
 <p><b>What to work on first:</b></p>""" + "".join(f'<div class="fix">{e(c)}</div>' for c in s["top_corrections"]) +
@@ -92,6 +97,14 @@ Long pauses: {s['long_pauses']} · Eye contact: {s['eye_contact_pct'] if s['eye_
             parts.append(f'<p class="muted">Could not score this answer ({e(a.get("error", "no result"))}).</p>')
             continue
         sc, d = a["score"], a["delivery"]
+        qi = a.get("question_info")
+        if qi and qi.get("source") == "ai":
+            parts.append(f'<p class="muted">The interviewer wrote this question for “{e(qi.get("slot", ""))}”'
+                         + (f', connected to what you said earlier (“{e(qi["callback"])}”)' if qi.get("callback") else "")
+                         + f'. It is scored with the rubric for: “{e(qi.get("plain_question", ""))}”</p>')
+        if a.get("praise"):
+            parts.append(f'<p class="muted">The interviewer said: “{e(a["praise"]["said"])}” '
+                         f'(because {e(a["praise"]["criterion"])} scored {a["praise"]["probe_score"]} in the quick check).</p>')
         parts.append(f"<p>Rubric score: <b>{sc['score']} / 5</b>{_bar(sc['score'])}</p>")
         parts.append(f'<div class="fix">{e(sc["correction"]["text"])}</div>')
         parts.append("<table><tr><th>Criterion</th><th>Score</th><th>Closest example level</th></tr>" + "".join(
@@ -99,7 +112,13 @@ Long pauses: {s['long_pauses']} · Eye contact: {s['eye_contact_pct'] if s['eye_
             for c in sc["criteria"]) + "</table>")
         if d["tips"]:
             parts.append("<ul>" + "".join(f"<li>{e(t)}</li>" for t in d["tips"]) + "</ul>")
-        parts.append(f"""<details><summary>Transcript and details</summary><p>{e(a['transcript']) or '<i>(no speech recognized)</i>'}</p>
+        fu = a.get("follow_up")
+        if fu:
+            parts.append(f"""<p class="muted">Follow-up asked: <b>“{e(fu['question'])}”</b><br>
+Why: {e(fu['reason'])}. Your follow-up answer is included in the score above.</p>""")
+        parts.append(f"""<details><summary>Transcript and details</summary><p>{e(a['transcript']) or '<i>(no speech recognized)</i>'}</p>""" +
+            (f"<p><b>Follow-up answer:</b> {e(fu['transcript']) or '<i>(no answer)</i>'}</p>" if fu else "") +
+            f"""
 <p class="muted">Pace {d['wpm'] or '-'} wpm · fillers {d['fillers']['total']} · long pauses {len(d['long_pauses'])} ·
 started after {d['response_latency_s'] if d['response_latency_s'] is not None else '-'} s · ended by {e(a['end_reason'])}</p>
 <p class="muted">Traceability: each criterion score comes from the approved example answer it matched most closely.</p>""" +

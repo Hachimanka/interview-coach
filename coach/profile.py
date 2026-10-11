@@ -68,6 +68,85 @@ def make_asr(cfg: Config):
     raise ValueError(f"Unknown asr.backend: {backend}")
 
 
+def make_command_asr(cfg: Config):
+    """Small, fast Whisper for short spoken commands ("yes", "that's my answer", "stop the interview").
+    The answer model (accurate, slower) keeps transcribing answers for scoring."""
+    v = cfg.get("voice") or {}
+    if not v.get("command_model"):
+        return make_asr(cfg)
+    from coach.asr.faster_whisper_backend import FasterWhisperBackend
+
+    return FasterWhisperBackend(cfg, model=v["command_model"], compute_type=v.get("command_compute_type", "int8"),
+                                beam_size=1, fast=True)
+
+
+_LLMS: dict = {}
+
+
+def make_llm(cfg: Config):
+    """The local LLM (llama.cpp), loaded once per process and shared by the rephraser and the
+    generative interviewer. None if disabled or the model file is missing."""
+    r = cfg.get("reply") or {}
+    if not r.get("llm"):
+        return None
+    path = models_dir(cfg) / "llm" / cfg.registry["llm"][r["llm_model"]]["file"]
+    if not path.exists():
+        print(f"[coach] local AI model missing ({path.name}); the robot uses approved lines only. "
+              f"Run: python -m offline.download_models")
+        return None
+    key = (str(path), r.get("llm_threads", 4), r.get("llm_ctx", 4096))
+    if key not in _LLMS:
+        from coach.reply.llm import LocalLLM
+
+        _LLMS[key] = LocalLLM(path, threads=key[1], n_ctx=key[2])
+    return _LLMS[key]
+
+
+def make_rephraser(cfg: Config, llm=None):
+    """Local AI that rephrases approved replies (None if disabled or the model is missing)."""
+    llm = llm or make_llm(cfg)
+    if llm is None:
+        return None
+    from coach.reply.llm import Rephraser
+
+    return Rephraser(llm=llm, max_words=(cfg.get("reply") or {}).get("llm_max_words", 25))
+
+
+def interviewer_mode(cfg: Config) -> str:
+    return (cfg.get("interviewer") or {}).get("mode", "scripted")
+
+
+def make_interviewer(cfg: Config, llm=None):
+    """Generative interviewer (interviewer.mode: generative). None in scripted mode or without the model."""
+    if interviewer_mode(cfg) != "generative":
+        return None
+    llm = llm or make_llm(cfg)
+    if llm is None:
+        return None
+    from coach.interviewer.interviewer import Interviewer
+
+    return Interviewer(llm, max_words=(cfg.get("interviewer") or {}).get("max_words", 40))
+
+
+def make_knowledge(cfg: Config, embedder):
+    """CpE/ECE knowledge library, embedded with the scoring embedder (None if turned off)."""
+    if not (cfg.get("interviewer") or {}).get("knowledge", True):
+        return None
+    from coach.interviewer.knowledge import Knowledge
+
+    return Knowledge(embedder, cfg)
+
+
+def make_laughter(cfg: Config):
+    r = cfg.get("reply") or {}
+    path = models_dir(cfg) / cfg.registry["audio_events"]["yamnet"]["file"]
+    if not r.get("laughter") or not path.exists():
+        return None
+    from coach.reply.laughter import LaughterDetector
+
+    return LaughterDetector(path, r.get("laughter_threshold", 0.3))
+
+
 def make_tts(cfg: Config):
     from coach.tts.piper_backend import PiperBackend
 
